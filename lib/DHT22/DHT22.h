@@ -8,7 +8,6 @@
 #include <DHT_U.h>
 
 // MACROS
-#define DHT22_PIN   5
 #define DHT_TYPE    DHT22
 
 #define READING_INTERVAL_MS 1000
