@@ -19,6 +19,8 @@ enum th_sensor_index{
 
 // FUNCTIONS
 void init_WTK_TH();
+float get_temperature(th_sensor_index sensor_index);
+float get_relative_humidity(th_sensor_index sensor_index);
 void validate_WTK_TH();
 
 #endif
