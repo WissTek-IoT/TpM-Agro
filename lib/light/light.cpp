@@ -10,6 +10,7 @@ SI114X light_sensor = SI114X();
 
 void init_light_system() {
     pinMode(LIGHT_RELAY_PIN, OUTPUT);
+    pinMode(LIGHT_BUTTON_PIN, INPUT);
     turn_light_off();
 
     while (!light_sensor.Begin()) {
