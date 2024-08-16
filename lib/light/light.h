@@ -3,6 +3,8 @@
 
 #include "utils.h"
 #include "pinout.h"
+#include <Wire.h>
+#include <SI114X.h>
 
 // MACROS
 
@@ -14,7 +16,9 @@ void turn_light_on();
 void turn_light_off();
 
     // SENSOR FUNCTIONS
-void read_ambient_light();
+uint16_t read_visible_light();
+uint16_t read_IR_light();
+float read_UV_index();
 
     // VALIDATION FUNCTIONS
 void validate_light_system();

@@ -10,10 +10,11 @@ void setup() {
   init_WTK_TH();
 
   validate_pump_system();
-  validate_light_system();
+  // validate_light_system();
 }
 
 void loop() {
-  validate_WTK_TH();
-  turn_light_off();
+  // validate_WTK_TH();
+  // turn_light_off();
+  validate_light_system();
 }
