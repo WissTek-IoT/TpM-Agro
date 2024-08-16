@@ -2,30 +2,29 @@
 #include "pump.h"
 #include "light.h"
 #include "WTK_TH.h"
+#include "mode.h"
 
 void setup() {
   Serial.begin(9600);
   init_pump_system();
   init_light_system();
   init_WTK_TH();
+  init_control();
 
-  validate_pump_system();
+  // validate_pump_system();
   // validate_light_system();
-  pinMode(AUTOMATIC_MODE_LED_PIN, OUTPUT);
-  pinMode(AUTOMATIC_MODE_BUTTON_PIN, INPUT);
 }
 
 void loop() {
-  // validate_WTK_TH();
-  // turn_light_off();
-  // validate_light_system();
-  // Serial.print(digitalRead(PUMP_BUTTON_PIN));
-  // Serial.print(" | ");
-  // Serial.print(digitalRead(LIGHT_BUTTON_PIN));
-  // Serial.print(" | ");
-  // Serial.println(digitalRead(AUTOMATIC_MODE_BUTTON_PIN));
-  // // Serial.print(" | ");
-  // digitalWrite(AUTOMATIC_MODE_LED_PIN, HIGH);
-  // check_if_pump_button_is_pressed();
-  control_pump();
+  switch (control_mode()) {
+    case AUTOMATIC_CONTROL:
+      break;
+    case MANUAL_CONTROL:
+      control_pump();
+      control_light();
+      break;
+
+    default:
+      break;
+  }
 }

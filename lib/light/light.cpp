@@ -7,6 +7,8 @@ void validate_light();
 #include "light.h"
 
 SI114X light_sensor = SI114X();
+bool light_state = false;
+unsigned long counter = 0;
 
 void init_light_system() {
     pinMode(LIGHT_RELAY_PIN, OUTPUT);
@@ -16,8 +18,7 @@ void init_light_system() {
     while (!light_sensor.Begin()) {
         Serial.println("Configurando o Sensor de Luz");
     }
-    // Wire1.begin(A4, A5);
-    // Wire.begin();
+
     Serial.println("Sistema de iluminação inicializado.");
 }
 
@@ -27,6 +28,26 @@ void turn_light_on() {
 
 void turn_light_off() {
     digitalWrite(LIGHT_RELAY_PIN, LOW);
+}
+
+bool check_if_light_button_is_pressed() {
+    // Pressing the button causes the light to switch from ON to OFF or vice-versa
+    if (digitalRead(LIGHT_BUTTON_PIN) == HIGH) {
+        counter++;
+    } else {
+        if (counter >= BUTTON_COUNTER_THRESHOLD) {
+            light_state = !light_state;
+        }
+        counter = 0;
+    }
+
+    return light_state;
+}
+
+void control_light() {
+    bool light_button = check_if_light_button_is_pressed();
+    if (light_button == true) turn_light_on();
+    else turn_light_off();
 }
 
 uint16_t read_visible_light() {

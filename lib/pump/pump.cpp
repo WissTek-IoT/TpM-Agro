@@ -25,15 +25,8 @@ bool check_if_pump_button_is_pressed() {
 
 void control_pump() {
     bool pump_button = check_if_pump_button_is_pressed();
-    if (pump_button == true) {
-        turn_pump_on();
-        return;
-    } 
-
-    if (pump_button == false) {
-        turn_pump_off();
-        return;
-    }
+    if (pump_button == true) turn_pump_on();
+    else turn_pump_off();
 }
 
 void validate_pump_system() {
