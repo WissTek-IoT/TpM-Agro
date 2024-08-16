@@ -5,9 +5,8 @@
 #include "utils.h"
 
 // MACROS
-#define RELAY_PIN   2
-
-#define DHT22_PIN   5
+#define PUMP_RELAY_PIN  4
+#define LIGHT_RELAY_PIN 3
 
 #define WKT_HUMIDITY_SENSOR_1_PIN     A0
 #define WKT_TEMPERATURE_SENSOR_1_PIN  A1
