@@ -14,6 +14,7 @@ void init_light_system();
     // ACTUATOR FUNCTIONS
 void turn_light_on();
 void turn_light_off();
+void control_light();
 
     // SENSOR FUNCTIONS
 uint16_t read_visible_light();
