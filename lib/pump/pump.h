@@ -7,9 +7,9 @@
 // MACROS
 
 // FUNCTIONS
-void init_pump();
+void init_pump_system();
 void turn_pump_on();
 void turn_pump_off();
-void validate_pump();
+void validate_pump_system();
 
 #endif
