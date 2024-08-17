@@ -3,6 +3,9 @@
 byte dl_packet[PACKET_BYTES];
 byte ul_packet[PACKET_BYTES];
 
+uint32_t dl_packet_counter;
+uint32_t ul_packet_counter;
+
 void init_mot_protocol() {
     init_physical_layer();
     init_mac_layer();
@@ -15,7 +18,7 @@ void receive_mot_packet() {
     if (Serial.available() >= PACKET_BYTES) {
         Serial.readBytes(dl_packet, PACKET_BYTES);
         clear_ul_packet();
-        
+
         read_physical_layer_packet();
     }
 }

@@ -9,11 +9,14 @@
 
 // MACROS
     #define PACKET_BYTES        52
+    #define MY_ID               11
     #define SERIAL_BAUD_RATE    9600
 
 // GLOBAL VARIABLES
 extern byte dl_packet[PACKET_BYTES];
 extern byte ul_packet[PACKET_BYTES];
+extern uint32_t dl_packet_counter;
+extern uint32_t ul_packet_counter;
 
 // FUNCTIONS
     // MoT
