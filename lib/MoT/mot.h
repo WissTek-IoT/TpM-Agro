@@ -21,6 +21,8 @@ extern uint32_t ul_packet_counter;
 // FUNCTIONS
     // MoT
 void init_mot_protocol();
+void receive_mot_packet();
+void send_mot_packet();
 
     // Physical Layer
 void init_physical_layer();
@@ -46,6 +48,7 @@ void assemble_transport_layer_packet();
 void init_application_layer();
 void read_application_layer_packet();
 void assemble_application_layer_packet();
+void run_application();
 
 // ENUMS
 enum packet_indexes{
@@ -74,17 +77,17 @@ enum packet_indexes{
     UL_COUNTER_LSB = 15,
 
     // Application Layer
-    APP1 = 16,
-    APP2 = 17,
-    APP3 = 18,
-    APP4 = 19,
-    APP5 = 20,
-    APP6 = 21,
-    APP7 = 22,
-    APP8 = 23,
-    APP9 = 24,
-    APP10 = 25,
-    APP11 = 26,
+    TEMPERATURE_BYTE_0      = 16,
+    TEMPERATURE_BYTE_1      = 17,
+    HUMIDITY_BYTE_0         = 18,
+    HUMIDITY_BYTE_1         = 19,
+    VISIBLE_LIGHT_BYTE_0    = 20,
+    VISIBLE_LIGHT_BYTE_1    = 21,
+    IR_LIGHT_BYTE_0         = 22,
+    IR_LIGHT_BYTE_1         = 23,
+    UV_INDEX_BYTE_0         = 24,
+    UV_INDEX_BYTE_1         = 25,
+    CONTROL_TYPE_INDEX      = 26,
     APP12 = 27,
     APP13 = 28, 
     APP14 = 29,

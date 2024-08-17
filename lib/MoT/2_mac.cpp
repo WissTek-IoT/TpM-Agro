@@ -9,5 +9,5 @@ void read_mac_layer_packet() {
 }
 
 void assemble_mac_layer_packet() {
-
+    assemble_physical_layer_packet();
 }
