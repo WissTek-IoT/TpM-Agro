@@ -7,10 +7,10 @@ void init_application_layer() {
     init_control();
 }
 
-void send_application_layer_packet() {
+void assemble_application_layer_packet() {
 
 }
 
-void receive_application_layer_packet() {
+void read_application_layer_packet() {
     
 }
