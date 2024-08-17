@@ -8,10 +8,10 @@ void init_physical_layer() {
     init_control();
 }
 
-void send_physical_layer_packet() {
+void read_physical_layer_packet() {
 
 }
 
-void receive_physical_layer_packet() {
+void assemble_physical_layer_packet() {
 
 }

@@ -8,7 +8,12 @@
 #include "mode.h"
 
 // MACROS
+    #define PACKET_BYTES        52
     #define SERIAL_BAUD_RATE    9600
+
+// GLOBAL VARIABLES
+extern byte dl_packet[PACKET_BYTES];
+extern byte ul_packet[PACKET_BYTES];
 
 // FUNCTIONS
     // MoT
@@ -16,19 +21,28 @@ void init_mot_protocol();
 
     // Physical Layer
 void init_physical_layer();
+void read_physical_layer_packet();
+void assemble_physical_layer_packet();
 
     // MAC Layer
 void init_mac_layer();
+void read_mac_layer_packet();
+void assemble_mac_layer_packet();
 
     // Network Layer
 void init_network_layer();
+void read_network_layer_packet();
+void assemble_network_layer_packet();
 
     // Transport Layer
 void init_transport_layer();
+void read_transport_layer_packet();
+void assemble_transport_layer_packet();
 
     // Application Layer
 void init_application_layer();
-
+void read_application_layer_packet();
+void assemble_application_layer_packet();
 
 // ENUMS
 enum packet_indexes{
