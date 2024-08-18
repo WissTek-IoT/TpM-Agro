@@ -38,7 +38,6 @@ void assemble_application_layer_packet() {
     // Assemble control mode data
     ul_packet[CONTROL_TYPE_INDEX] = control;
 
-    teste_ul_packet[51] = 200;
     assemble_transport_layer_packet();
 }
 
