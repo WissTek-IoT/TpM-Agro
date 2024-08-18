@@ -40,13 +40,13 @@ class packet_indexes(Enum):
     UV_INDEX_BYTE_0         = 24
     UV_INDEX_BYTE_1         = 25
     CONTROL_TYPE_INDEX      = 26
-    APP12 = 27
-    APP13 = 28 
-    APP14 = 29
-    APP15 = 30
-    APP16 = 31
-    APP17 = 32
-    APP18 = 33
+    PUMP_SIGNAL             = 27
+    LIGHT_SIGNAL            = 28 
+    PUMP_INTERVAL_BYTE_0    = 29
+    PUMP_INTERVAL_BYTE_1    = 30
+    PUMP_DURATION_BYTE_0    = 31
+    PUMP_DURATION_BYTE_1    = 32
+    AUTOMATIC_MODE_TYPE     = 33
     APP19 = 34
     APP20 = 35
     APP21 = 36
@@ -98,6 +98,7 @@ pump_signal                 = 0
 light_signal                = 0
 pump_activation_interval    = 60
 pump_activation_duration    = 5
+automatic_mode_type         = 0
 hour_to_turn_on_light       = "06:00:00"
 hour_to_turn_off_light      = "18:00:00"
 
@@ -118,6 +119,7 @@ def store_command_variables(commands):
     global light_signal
     global pump_activation_interval
     global pump_activation_duration
+    global automatic_mode_type
     global hour_to_turn_on_light
     global hour_to_turn_off_light
 
@@ -127,8 +129,9 @@ def store_command_variables(commands):
     light_signal                = int(commands[2])
     pump_activation_interval    = int(commands[3])
     pump_activation_duration    = int(commands[4])
-    hour_to_turn_on_light       = str(commands[5])
-    hour_to_turn_off_light      = str(commands[6])
+    automatic_mode_type         = int(commands[5])
+    hour_to_turn_on_light       = str(commands[6])
+    hour_to_turn_off_light      = str(commands[7])
 
 def read_commands_file():
     commands = []
@@ -150,19 +153,29 @@ def read_commands_file():
 def assemble_dl_packet():
     global dl_packet
 
+    read_commands_file()
+
+    # Network Layer
     dl_packet[packet_indexes.TRANSMITTER_ID.value]  = MY_ID
     dl_packet[packet_indexes.RECEIVER_ID.value]     = RECEIVER_ID
 
-    
+    # Application Layer
+    dl_packet[packet_indexes.PUMP_SIGNAL.value]             = pump_signal
+    dl_packet[packet_indexes.LIGHT_SIGNAL_SIGNAL.value]     = light_signal
 
+    dl_packet[packet_indexes.PUMP_INTERVAL_BYTE_0.value]    = pump_activation_interval%256
+    dl_packet[packet_indexes.PUMP_INTERVAL_BYTE_1.value]    = pump_activation_interval/256
+
+    dl_packet[packet_indexes.PUMP_DURATION_BYTE_0.value]    = pump_activation_duration%256
+    dl_packet[packet_indexes.PUMP_DURATION_BYTE_1.value]    = pump_activation_duration/256
+
+    dl_packet[packet_indexes.AUTOMATIC_MODE_TYPE.value]     = automatic_mode_type
 
 # Sends the dl packet to the device
 def send_packet():
-    read_commands_file()
     ser.reset_input_buffer()
 
     assemble_dl_packet()
-
     ser.write(dl_packet)
     ser.flush()
 

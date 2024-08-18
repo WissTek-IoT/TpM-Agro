@@ -44,10 +44,14 @@ bool check_if_light_button_is_pressed() {
     return light_state;
 }
 
-void control_light() {
+void control_light_by_button() {
     bool light_button = check_if_light_button_is_pressed();
     if (light_button == true) turn_light_on();
     else turn_light_off();
+}
+
+void control_light_by_signal(uint8_t signal) {
+    digitalWrite(LIGHT_RELAY_PIN, signal);
 }
 
 uint16_t read_visible_light() {

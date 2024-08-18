@@ -1,5 +1,6 @@
 #include "mot.h"
 
+// Reading Variables
 float current_temperature;
 float current_humidity;
 
@@ -8,6 +9,21 @@ uint16_t current_ir_light_intensity;
 float current_uv_index;
 
 controller_type control;
+
+// Control Variables
+uint8_t pump_signal     = 0;
+uint8_t light_signal    = 0;
+uint16_t pump_activation_interval = 60;
+uint16_t pump_activation_duration = 5;
+uint8_t automatic_mode_type       = 0;
+
+    // Periodic control
+unsigned long current_time = 0;
+unsigned long last_time = 0;
+
+bool timer_enabled = false;
+unsigned long timer_begin = 0;
+unsigned long finish_time = 0;
 
 void init_application_layer() {
     init_pump_system();
@@ -42,7 +58,61 @@ void assemble_application_layer_packet() {
 }
 
 void read_application_layer_packet() {
-    
+    pump_signal     = dl_packet[PUMP_SIGNAL];
+    light_signal    = dl_packet[LIGHT_SIGNAL];
+
+    pump_activation_duration = (256*dl_packet[PUMP_DURATION_BYTE_1] + dl_packet[PUMP_DURATION_BYTE_0]) * 1000; // Assembles the data and converts into milliseconds
+    pump_activation_interval = (256*dl_packet[PUMP_INTERVAL_BYTE_1] + dl_packet[PUMP_INTERVAL_BYTE_0]) * 1000; // Same as above
+
+    automatic_mode_type = dl_packet[AUTOMATIC_MODE_TYPE];
+}
+
+/*  Periodic Automatic Control implies that the nutrient pump will be activated at a given interval for a given duration.
+    However, light control is still done by python as it depends on having a RTC.
+*/
+void run_periodic_automatic_control() {
+    current_time = millis();
+    if ((current_time - last_time >= pump_activation_interval) && timer_enabled == false) {
+        timer_enabled = true;
+        timer_begin = millis();
+    }
+
+    if (timer_enabled == true) {
+        if (current_time - timer_begin <= pump_activation_duration) {
+            turn_pump_on();
+        } else {
+            turn_pump_off();
+            timer_enabled = false;
+            last_time = millis();
+        }
+    }
+    control_light_by_signal(light_signal);
+}
+
+// Receives ML signal from packet and applies it to given devices.
+void run_ml_automatic_control() {
+    control_pump_by_signal(pump_signal);
+    control_light_by_signal(light_signal);
+}
+
+// Runs either Periodic or Machine Learning Automatic Control
+void run_automatic_control() {
+    switch (automatic_mode_type) {
+        case AUTOMATIC_PERIODIC_MODE:
+            run_periodic_automatic_control();
+            break;
+        case AUTOMATIC_ML_MODE:
+            run_ml_automatic_control();
+            break;
+        default:
+            break;
+    }
+}
+
+// Control given devices by external buttons
+void run_manual_control() {
+    control_pump_by_button();
+    control_light_by_button();
 }
 
 void run_application() {
@@ -64,14 +134,13 @@ void run_application() {
 
     control = control_mode();
     switch (control) {
-    case AUTOMATIC_CONTROL:
-        break;
-    case MANUAL_CONTROL:
-        control_pump();
-        control_light();
-        break;
-
-    default:
-        break;
+        case AUTOMATIC_CONTROL:
+            run_automatic_control();
+            break;
+        case MANUAL_CONTROL:
+            run_manual_control();
+            break;
+        default:
+            break;
     }
 }

@@ -10,7 +10,8 @@
 void init_pump_system();
 void turn_pump_on();
 void turn_pump_off();
-void control_pump();
+void control_pump_by_button();
+void control_pump_by_signal(uint8_t signal);
 void validate_pump_system();
 
 #endif

@@ -12,6 +12,9 @@
     #define MY_ID               11
     #define SERIAL_BAUD_RATE    9600
 
+    #define AUTOMATIC_PERIODIC_MODE 0
+    #define AUTOMATIC_ML_MODE       1
+
 // GLOBAL VARIABLES
 extern byte dl_packet[PACKET_BYTES];
 extern byte ul_packet[PACKET_BYTES];
@@ -88,13 +91,13 @@ enum packet_indexes{
     UV_INDEX_BYTE_0         = 24,
     UV_INDEX_BYTE_1         = 25,
     CONTROL_TYPE_INDEX      = 26,
-    APP12 = 27,
-    APP13 = 28, 
-    APP14 = 29,
-    APP15 = 30,
-    APP16 = 31,
-    APP17 = 32,
-    APP18 = 33,
+    PUMP_SIGNAL             = 27,
+    LIGHT_SIGNAL            = 28,
+    PUMP_INTERVAL_BYTE_0    = 29,
+    PUMP_INTERVAL_BYTE_1    = 30,
+    PUMP_DURATION_BYTE_0    = 31,
+    PUMP_DURATION_BYTE_1    = 32,
+    AUTOMATIC_MODE_TYPE = 33,
     APP19 = 34,
     APP20 = 35,
     APP21 = 36,
@@ -114,6 +117,5 @@ enum packet_indexes{
     APP35 = 50,
     APP36 = 51,
 };
-
 
 #endif
