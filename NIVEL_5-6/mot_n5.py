@@ -22,7 +22,7 @@ class data_indexes(Enum):
 application_data_file_location  = os.path.join(os.path.dirname(__file__), '../NIVEL_4/application_data.txt')
 
 abstraction_data_file_location  = os.path.join(os.path.dirname(__file__), '../NIVEL_4/abstraction_data.txt')
-abstraction_data_file           = open(abstraction_data_file_location, 'a')
+abstraction_data_file           = open(abstraction_data_file_location, 'a+')
 abstraction_data_file.close()
 
 # Data arrays

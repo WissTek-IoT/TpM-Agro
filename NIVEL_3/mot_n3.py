@@ -115,6 +115,23 @@ print("Conexão Serial estabelecida na porta " + serial_port + ".")
 ser.reset_input_buffer()
 ser.reset_output_buffer()
 
+def get_seconds(time_string):
+    h, m, s = time_string.split(':')
+    return int(h)*3600 + int(m)*60 + int(s)
+
+def control_light_based_on_time():
+    global light_signal
+
+    current_hour    = time.strftime("%H:%M:%S")
+
+    seconds_to_turn_on_light    = get_seconds(hour_to_turn_on_light)
+    seconds_to_turn_off_light   = get_seconds(hour_to_turn_off_light)
+    current_seconds             = get_seconds(current_hour)
+    evaluation = (  current_seconds > seconds_to_turn_on_light  and 
+                    current_seconds < seconds_to_turn_off_light)
+    
+    light_signal = evaluation
+
 def store_command_variables(commands):
     global communication_interval
     global pump_signal
@@ -134,6 +151,11 @@ def store_command_variables(commands):
     automatic_mode_type         = int(commands[5])
     hour_to_turn_on_light       = str(commands[6])
     hour_to_turn_off_light      = str(commands[7])
+
+    # If the system is in automatic periodic mode, controls light based on current hour
+    if (control_mode == 1 and ul_packet[packet_indexes.AUTOMATIC_MODE_TYPE.value] == 0):
+        control_light_based_on_time()
+
 
 def read_commands_file():
     commands = []
