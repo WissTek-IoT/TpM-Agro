@@ -47,8 +47,8 @@ class packet_indexes(Enum):
     PUMP_DURATION_BYTE_0    = 31
     PUMP_DURATION_BYTE_1    = 32
     AUTOMATIC_MODE_TYPE     = 33
-    APP19 = 34
-    APP20 = 35
+    IS_PUMP_ENABLED         = 34
+    IS_LIGHT_ENABLED        = 35
     APP21 = 36
     APP22 = 37
     APP23 = 38
@@ -82,6 +82,8 @@ visible_light_intensity = 0
 ir_light_intensity      = 0
 uv_index                = 0
 control_mode            = 0
+pump_enabled            = 0
+light_enabled           = 0
 
 # Files
     # Creates the application data file if it already not exists
@@ -156,18 +158,18 @@ def assemble_dl_packet():
     read_commands_file()
 
     # Network Layer
-    dl_packet[packet_indexes.TRANSMITTER_ID.value]  = MY_ID
-    dl_packet[packet_indexes.RECEIVER_ID.value]     = RECEIVER_ID
+    dl_packet[packet_indexes.TRANSMITTER_ID.value]          = MY_ID
+    dl_packet[packet_indexes.RECEIVER_ID.value]             = RECEIVER_ID
 
     # Application Layer
     dl_packet[packet_indexes.PUMP_SIGNAL.value]             = pump_signal
-    dl_packet[packet_indexes.LIGHT_SIGNAL_SIGNAL.value]     = light_signal
+    dl_packet[packet_indexes.LIGHT_SIGNAL.value]            = light_signal
 
-    dl_packet[packet_indexes.PUMP_INTERVAL_BYTE_0.value]    = pump_activation_interval%256
-    dl_packet[packet_indexes.PUMP_INTERVAL_BYTE_1.value]    = pump_activation_interval/256
+    dl_packet[packet_indexes.PUMP_INTERVAL_BYTE_0.value]    = int(pump_activation_interval%256)
+    dl_packet[packet_indexes.PUMP_INTERVAL_BYTE_1.value]    = int(pump_activation_interval/256)
 
-    dl_packet[packet_indexes.PUMP_DURATION_BYTE_0.value]    = pump_activation_duration%256
-    dl_packet[packet_indexes.PUMP_DURATION_BYTE_1.value]    = pump_activation_duration/256
+    dl_packet[packet_indexes.PUMP_DURATION_BYTE_0.value]    = int(pump_activation_duration%256)
+    dl_packet[packet_indexes.PUMP_DURATION_BYTE_1.value]    = int(pump_activation_duration/256)
 
     dl_packet[packet_indexes.AUTOMATIC_MODE_TYPE.value]     = automatic_mode_type
 
@@ -246,19 +248,24 @@ def debug_application_data(debug):
     global visible_light_intensity 
     global ir_light_intensity      
     global uv_index                
-    global control_mode       
+    global control_mode
+    global pump_enabled
+    global light_enabled       
 
     if debug:     
         print(("Temperature: {} °C\n" +
                 "Humidity: {}%\n" +
                 "Visible: {} lm | IR: {} lm | UV Index: {}\n" +
-                "Control Mode: {}\n").format(
+                "Control Mode: {}\n" +
+                "Pump State: {} | Light State: {}\n").format(
                     temperature,
                     humidity,
                     visible_light_intensity,
                     ir_light_intensity,
                     uv_index,
-                    control_mode
+                    control_mode,
+                    pump_enabled,
+                    light_enabled
                 ))
 
 # Reads the application packet
@@ -270,6 +277,8 @@ def read_application_packet():
     global ir_light_intensity      
     global uv_index                
     global control_mode   
+    global pump_enabled
+    global light_enabled
 
     # Extract application data from packet
     temperature             = read_value_from_packet(packet_indexes.TEMPERATURE_BYTE_0.value,   True)
@@ -280,6 +289,9 @@ def read_application_packet():
     uv_index                = read_value_from_packet(packet_indexes.UV_INDEX_BYTE_0.value,      True)
 
     control_mode            = read_value_from_packet(packet_indexes.CONTROL_TYPE_INDEX.value,   False, True)
+
+    pump_enabled            = read_value_from_packet(packet_indexes.IS_PUMP_ENABLED.value,     False, True)
+    light_enabled           = read_value_from_packet(packet_indexes.IS_LIGHT_ENABLED.value,    False, True)
 
     debug_application_data(True)
 
@@ -295,6 +307,8 @@ def store_application_data():
             ir_light_intensity,
             uv_index,
             control_mode,
+            pump_enabled,
+            light_enabled,
             "\n"
         ]
         
@@ -309,14 +323,14 @@ def store_application_data():
 # Main code (loop)
 while True:
     send_packet()
-    # time.sleep(0.1)     # Waits for the ul packet
-    # extract_packet()    # Removes the ini and the end\n portions of the packet
-    # time.sleep(communication_interval)     # interval between packets
+    time.sleep(0.1)     # Waits for the ul packet
+    extract_packet()    # Removes the ini and the end\n portions of the packet
+    time.sleep(communication_interval)     # interval between packets
 
-    # if len(ul_packet) == PACKET_BYTES:
-    #     debug_received_packet(False)
-    #     read_application_packet()
-    #     store_application_data()
-    # else:
-    #     print("Perdeu pacote")
-    #     ser.reset_input_buffer()
+    if len(ul_packet) == PACKET_BYTES:
+        debug_received_packet(False)
+        read_application_packet()
+        store_application_data()
+    else:
+        print("Perdeu pacote")
+        ser.reset_input_buffer()

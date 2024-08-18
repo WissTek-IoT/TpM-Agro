@@ -15,6 +15,9 @@ class data_indexes(Enum):
 
     CONTROL_MODE_INDEX  = 7
 
+    PUMP_ENABLED_INDEX  = 8
+    LIGHT_ENABLED_INDEX = 9
+
 # Files
 application_data_file_location  = os.path.join(os.path.dirname(__file__), '../NIVEL_4/application_data.txt')
 
@@ -31,6 +34,8 @@ visible_light   = []
 ir_light        = []
 uv_index        = []
 control_mode    = []
+pump_enabled    = []
+light_enabled   = []
 
 # Abstraction arrays
 time_interval     = []
@@ -61,6 +66,8 @@ def store_application_data(data_line):
     global ir_light        
     global uv_index        
     global control_mode  
+    global pump_enabled
+    global light_enabled
 
     # Stores each data value into a temporary variable
     current_date = data_line[data_indexes.DATE_INDEX.value]
@@ -71,6 +78,8 @@ def store_application_data(data_line):
     current_ir_light        = int     (data_line[data_indexes.IR_LIGHT_INDEX      .value])
     current_uv_index        = float   (data_line[data_indexes.UV_INDEX            .value])
     current_control_mode    = int     (data_line[data_indexes.CONTROL_MODE_INDEX  .value])
+    current_pump_enabled    = int     (data_line[data_indexes.PUMP_ENABLED_INDEX  .value])
+    current_light_enabled   = int     (data_line[data_indexes.LIGHT_ENABLED_INDEX .value])
 
     # If none of the values is an outlier, store the data line
     if (
@@ -90,6 +99,8 @@ def store_application_data(data_line):
         ir_light        .append(current_ir_light)
         uv_index        .append(current_uv_index)
         control_mode    .append(current_control_mode)
+        pump_enabled    .append(current_pump_enabled)
+        light_enabled   .append(current_light_enabled)
 
 def read_application_data():
     global date            
@@ -100,6 +111,8 @@ def read_application_data():
     global ir_light        
     global uv_index        
     global control_mode    
+    global pump_enabled    
+    global light_enabled    
 
     application_data_file = open(application_data_file_location, 'r')
 
@@ -119,6 +132,8 @@ def compute_abstraction_data():
     global ir_light        
     global uv_index        
     global control_mode  
+    global pump_enabled 
+    global light_enabled
 
     global time_interval        
     global elapsed_time           
@@ -176,6 +191,8 @@ def store_abstraction_data():
                 d_visible_light[i],
                 d_ir_light[i],
                 d_uv_index[i],
+                pump_enabled[i],
+                light_enabled[i],
                 "\n"
             ]
             

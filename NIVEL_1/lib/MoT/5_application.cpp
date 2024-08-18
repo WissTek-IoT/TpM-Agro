@@ -17,13 +17,15 @@ uint16_t pump_activation_interval = 60;
 uint16_t pump_activation_duration = 5;
 uint8_t automatic_mode_type       = 0;
 
-    // Periodic control
 unsigned long current_time = 0;
 unsigned long last_time = 0;
 
 bool timer_enabled = false;
 unsigned long timer_begin = 0;
 unsigned long finish_time = 0;
+
+bool pump_enabled = 0;
+bool light_enabled = 0;
 
 void init_application_layer() {
     init_pump_system();
@@ -54,6 +56,10 @@ void assemble_application_layer_packet() {
     // Assemble control mode data
     ul_packet[CONTROL_TYPE_INDEX] = control;
 
+    // Assemble Actuators data
+    ul_packet[IS_PUMP_ENABLED]  = pump_enabled;
+    ul_packet[IS_LIGHT_ENABLED] = light_enabled;
+
     assemble_transport_layer_packet();
 }
 
@@ -79,13 +85,16 @@ void run_periodic_automatic_control() {
 
     if (timer_enabled == true) {
         if (current_time - timer_begin <= pump_activation_duration) {
+            pump_enabled = HIGH;
             turn_pump_on();
         } else {
+            pump_enabled = LOW;
             turn_pump_off();
             timer_enabled = false;
             last_time = millis();
         }
     }
+    light_enabled = light_signal;
     control_light_by_signal(light_signal);
 }
 
@@ -113,6 +122,9 @@ void run_automatic_control() {
 void run_manual_control() {
     control_pump_by_button();
     control_light_by_button();
+
+    pump_enabled    = get_pump_state();
+    light_enabled   = get_light_state();
 }
 
 void run_application() {

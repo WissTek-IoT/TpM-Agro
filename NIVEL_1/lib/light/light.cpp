@@ -54,6 +54,10 @@ void control_light_by_signal(uint8_t signal) {
     digitalWrite(LIGHT_RELAY_PIN, signal);
 }
 
+bool get_light_state() {
+    return light_state;
+}
+
 uint16_t read_visible_light() {
     return light_sensor.ReadVisible();
 }

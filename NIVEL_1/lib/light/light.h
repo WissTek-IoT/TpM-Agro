@@ -12,6 +12,7 @@
 void init_light_system();
 
     // ACTUATOR FUNCTIONS
+bool get_light_state();
 void turn_light_on();
 void turn_light_off();
 void control_light_by_button();

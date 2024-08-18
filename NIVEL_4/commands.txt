@@ -1,8 +1,8 @@
 Communication Interval;                             1
 Pump;                                               0
 Light;                                              0
-Automatic Mode Pump Activation Interval;            60
-Automatic Mode Pump Activation Duration;            5
+Automatic Mode Pump Activation Interval;            8
+Automatic Mode Pump Activation Duration;            2
 Automatic Mode (0- Periodic | 1- ML);               0
 Hour to Turn On Light;                              06:00:00
 Hour to Turn Off Light;                             18:00:00
