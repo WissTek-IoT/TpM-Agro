@@ -131,12 +131,12 @@ def compute_abstraction_data():
     for i in range(len(date)):
         if (i != 0):
             # Calculate elapsed time
-            initial_time    = datetime.strptime(str(date[0] + ';' + hour[0]), time_format)
-            current_time    = datetime.strptime(str(date[i] + ';' + hour[i])    , time_format)
+            initial_time    = datetime.strptime(str(date[0] + ';' + hour[0])    ,time_format)   # Merges separated date and hour presented in time_format format into a datetime instance
+            current_time    = datetime.strptime(str(date[i] + ';' + hour[i])    ,time_format)   # Same as above
             elapsed_time.append((current_time-initial_time).total_seconds())
 
             # Calculate time interval
-            previous_time   = datetime.strptime(str(date[i-1] + ';' + hour[i-1]), time_format)
+            previous_time   = datetime.strptime(str(date[i-1] + ';' + hour[i-1]), time_format)  # Same as above
             delta_seconds = (current_time - previous_time).total_seconds()
             time_interval.append(int(delta_seconds))
 

@@ -89,6 +89,18 @@ application_data_file_location  = os.path.join(os.path.dirname(__file__), '../NI
 application_data_file           = open(application_data_file_location, 'a')
 application_data_file.close()
 
+    # Commands File
+commands_file_location  = os.path.join(os.path.dirname(__file__), '../NIVEL_4/commands.txt')
+
+# Commands
+communication_interval      = 1.0
+pump_signal                 = 0
+light_signal                = 0
+pump_activation_interval    = 60
+pump_activation_duration    = 5
+hour_to_turn_on_light       = "06:00:00"
+hour_to_turn_off_light      = "18:00:00"
+
 # Init Serial communication
 while True:
     try:
@@ -99,6 +111,60 @@ while True:
 print("Conexão Serial estabelecida na porta " + serial_port + ".")
 ser.reset_input_buffer()
 ser.reset_output_buffer()
+
+def store_command_variables(commands):
+    global communication_interval
+    global pump_signal
+    global light_signal
+    global pump_activation_interval
+    global pump_activation_duration
+    global hour_to_turn_on_light
+    global hour_to_turn_off_light
+
+    # Stores all commands into its variables
+    communication_interval      = int(commands[0])
+    pump_signal                 = int(commands[1])
+    light_signal                = int(commands[2])
+    pump_activation_interval    = int(commands[3])
+    pump_activation_duration    = int(commands[4])
+    hour_to_turn_on_light       = str(commands[5])
+    hour_to_turn_off_light      = str(commands[6])
+
+def read_commands_file():
+    commands = []
+
+    commands_file = open(commands_file_location, 'r')
+    # Stores all commands into an array
+    for line in commands_file:
+        # Separates data from colon
+        line = line.strip()
+        data_line = line.split(';')
+        data_line = data_line[1].strip()
+        commands.append(data_line)
+
+    store_command_variables(commands)
+
+    commands_file.close()
+
+
+def assemble_dl_packet():
+    global dl_packet
+
+    dl_packet[packet_indexes.TRANSMITTER_ID.value]  = MY_ID
+    dl_packet[packet_indexes.RECEIVER_ID.value]     = RECEIVER_ID
+
+    
+
+
+# Sends the dl packet to the device
+def send_packet():
+    read_commands_file()
+    ser.reset_input_buffer()
+
+    assemble_dl_packet()
+
+    ser.write(dl_packet)
+    ser.flush()
 
 # Prints all the content com the received packet
 def debug_received_packet(debug):
@@ -121,16 +187,6 @@ def read_value_from_packet(initial_index, is_float, is_single_byte = False):
     if (is_float): data /= 10
 
     return data
-
-# Sends the dl packet to the device
-def send_packet():
-    ser.reset_input_buffer()
-
-    dl_packet[packet_indexes.TRANSMITTER_ID.value]  = MY_ID
-    dl_packet[packet_indexes.RECEIVER_ID.value]     = RECEIVER_ID
-
-    ser.write(dl_packet)
-    ser.flush()
 
 # Find the position of the ini sequence (start of the packet) to avoid discontinuities
 def find_ini_sequence():
@@ -240,14 +296,14 @@ def store_application_data():
 # Main code (loop)
 while True:
     send_packet()
-    time.sleep(0.1)     # Waits for the ul packet
-    extract_packet()    # Removes the ini and the end\n portions of the packet
-    time.sleep(0.5)     # interval between packets
+    # time.sleep(0.1)     # Waits for the ul packet
+    # extract_packet()    # Removes the ini and the end\n portions of the packet
+    # time.sleep(communication_interval)     # interval between packets
 
-    if len(ul_packet) == PACKET_BYTES:
-        debug_received_packet(False)
-        read_application_packet()
-        store_application_data()
-    else:
-        print("Perdeu pacote")
-        ser.reset_input_buffer()
+    # if len(ul_packet) == PACKET_BYTES:
+    #     debug_received_packet(False)
+    #     read_application_packet()
+    #     store_application_data()
+    # else:
+    #     print("Perdeu pacote")
+    #     ser.reset_input_buffer()
