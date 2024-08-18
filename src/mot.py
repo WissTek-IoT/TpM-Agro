@@ -7,6 +7,13 @@ MY_ID            = 1
 RECEIVER_ID      = 11
 SERIAL_BAUD_RATE = 9600
 
+temperature             = 0
+humidity                = 0
+visible_light_intensity = 0
+ir_light_intensity      = 0
+uv_index                = 0
+control_mode            = 0
+
 class packet_indexes(Enum):
     # Physical Layer
     UPLINK_RSSI     = 0
@@ -78,7 +85,7 @@ ul_packet = [0]*PACKET_BYTES
 # Init Serial communication
 while True:
     try:
-        ser = serial.Serial(serial_port, SERIAL_BAUD_RATE, timeout = 1)
+        ser = serial.Serial(serial_port, SERIAL_BAUD_RATE)
         break
     except:
         pass
@@ -113,12 +120,92 @@ def send_packet():
     ser.write(dl_packet)
     ser.flush()
 
+def find_ini_sequence():
+    ini_first_i_index   = ul_packet.find(ord('i'))
+    ini_n_index         = ul_packet.find(ord('n'))
+    ini_last_i_index    = ul_packet.find(ord('i'), ini_first_i_index + 1)
+
+    ini_index           = [ini_first_i_index, ini_n_index, ini_last_i_index]
+    return ini_index
+
+def find_end_sequence():
+    end_e_index     = ul_packet.rfind(ord('e'))
+    end_n_index     = ul_packet.rfind(ord('n'))
+    end_d_index     = ul_packet.rfind(ord('d'))
+    end_LF_index    = ul_packet.rfind(ord('\n'))
+
+    end_index           = [end_e_index, end_n_index, end_d_index, end_LF_index]
+    return end_index
+
+def is_sequential(list):
+    return all(list[i] == list[i-1] + 1 for i in range(1, len(list)))
+
 while True:
-# Receive packet
-    send_packet()
-    time.sleep(0.06) # waits for the dl packet (time taken by arduino to finish writing the dl packet)
-    ul_packet = ser.read(PACKET_BYTES)
     ser.reset_input_buffer()
+    send_packet()
+    time.sleep(1.0)
+
+    ul_packet = ser.readline()
+    # print(ul_packet.rfind(ord('\n')))
+    ini_first_i_index   = ul_packet.find(ord('i'))
+    ini_n_index         = ul_packet.find(ord('n'))
+    ini_last_i_index    = ul_packet.find(ord('i'), ini_first_i_index + 1)
+
+    ini_index           = [ini_first_i_index, ini_n_index, ini_last_i_index]
+    is_ini_sequential   = all(ini_index[i] == ini_index[i-1] + 1 for i in range(1, len(ini_index)))
+
+    if is_ini_sequential:
+        end_e_index     = ul_packet.rfind(ord('e'))
+        end_n_index     = ul_packet.rfind(ord('n'))
+        end_d_index     = ul_packet.rfind(ord('d'))
+        end_LF_index    = ul_packet.rfind(ord('\n'))
+
+        end_index           = [end_e_index, end_n_index, end_d_index, end_LF_index]
+        is_end_sequential   = all(end_index[i] == end_index[i-1] + 1 for i in range(1, len(end_index)))
+        # print(end_index)
+
+        if is_end_sequential:
+            ul_packet = ul_packet[(ini_index[2]+1):end_index[0]]
+    # ul_packet = ser.readline()
+    # end_of_packet = ul_packet.find(ord('\n'))
+    # print(end_of_packet)
+    # ul_packet = ul_packet[:end_of_packet]
+    # ul_packet = ul_packet[-52:]
+    # print(ul_packet)
+    # print("L: ", len(ul_packet))
+
+    # teste = ser.readline()
+    # index_teste = teste.find(ord('\n'))
+    # new_teste = teste[:index_teste]
+    # new_teste = new_teste[-2:]
+    # print(index_teste)
+    # print(new_teste)
+    # print("L: ", len(new_teste))
+    # ini_character_pos = [teste.find(ord('i')), teste.find(ord('n')), teste.find(ord('i'), 1)]
+    # is_consecutive = all(ini_character_pos[i] == ini_character_pos[i-1] + 1 for i in range(1, len(ini_character_pos)))
+    # print("L:", len(teste))
+    # print(teste.find(105))
+    # print(teste.find(110))
+    # print(teste.find(105,1))
+    # print(ini_character_pos)
+    # print(is_consecutive)
+    # print(teste)
+    # pos_ini = teste.find("ini")
+    # pos_end = teste.find("end")
+    # sub_teste = teste[pos_ini+3:pos_end]
+    # print("L: ", len(sub_teste))
+    # print(sub_teste)
+    # ul_packet = sub_teste
+
+
+
+    # print(ser.readline())
+# Receive packet
+    # send_packet()
+    # time.sleep(1.0) # waits for the dl packet (time taken by arduino to finish writing the dl packet)
+    # # ul_packet = ser.read(PACKET_BYTES)
+    # ul_packet = ser.readline(PACKET_BYTES)
+    # # ser.reset_input_buffer()
     # print(len(ul_packet))
     if len(ul_packet) == PACKET_BYTES:
         debug_received_packet(False)
@@ -146,3 +233,6 @@ while True:
                ))
     else:
         print("Perdeu pacote")
+        ser.reset_input_buffer()
+
+    # time.sleep(1.0)
