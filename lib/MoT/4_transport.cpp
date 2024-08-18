@@ -16,10 +16,10 @@ void assemble_transport_layer_packet() {
     ul_packet_counter++;
 
     ul_packet[UL_COUNTER_LSB] = ul_packet_counter%256;
-    ul_packet[UL_COUNTER_MSB] = ul_packet_counter%256;
+    ul_packet[UL_COUNTER_MSB] = ul_packet_counter/256;
 
     ul_packet[DL_COUNTER_LSB] = dl_packet_counter%256;
-    ul_packet[DL_COUNTER_MSB] = dl_packet_counter%256;
+    ul_packet[DL_COUNTER_MSB] = dl_packet_counter/256;
 
     assemble_network_layer_packet();
 }

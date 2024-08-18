@@ -13,6 +13,7 @@ bool check_if_mode_button_is_pressed() {
     // Pressing the button causes the light to switch from ON to OFF or vice-versa
     if (digitalRead(AUTOMATIC_MODE_BUTTON_PIN) == HIGH) {
         mode_counter++;
+        Serial.println(mode_counter);
     } else {
         if (mode_counter >= BUTTON_COUNTER_THRESHOLD) {
             mode_state = !mode_state;

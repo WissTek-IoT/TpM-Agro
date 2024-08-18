@@ -42,7 +42,7 @@ void assemble_application_layer_packet() {
 }
 
 void read_application_layer_packet() {
-
+    
 }
 
 void run_application() {
@@ -52,7 +52,7 @@ void run_application() {
 
     // Light Intensity
     current_visible_light_intensity = read_visible_light();
-    current_ir_light_intensity      = read_visible_light();
+    current_ir_light_intensity      = read_IR_light();
     current_uv_index                = read_UV_index();
 
     // constrain all variables so they don't cause packet errors

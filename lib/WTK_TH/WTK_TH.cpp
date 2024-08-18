@@ -17,7 +17,7 @@ void read_temperature() {
     for (uint8_t i = 0; i < WTK_TEMPERATURE_NUMBER_OF_SAMPLES_PER_READING; i++) {
       // For more information on that equation, read temperature sensors' datasheet
       average_temperature[current_sensor] += ((((analogRead(WTK_T_PINS[current_sensor])/1023.0) * WTK_TH_INPUT_VOLTAGE) - 0.5)/0.01);
-      delay(WTK_TEMPERATURE_READING_SAMPLE_TIME);
+      // delay(WTK_TEMPERATURE_READING_SAMPLE_TIME);
     } 
     average_temperature[current_sensor] /= WTK_TEMPERATURE_NUMBER_OF_SAMPLES_PER_READING;
 

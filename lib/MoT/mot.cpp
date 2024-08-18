@@ -34,6 +34,7 @@ void receive_mot_packet() {
         clear_ul_packet();
 
         read_physical_layer_packet();
+        send_mot_packet();
     }
 }
 
@@ -50,6 +51,5 @@ void send_mot_packet() {
         // Sends packet and waits for the transmission to complete
         Serial.write(ul_packet, PACKET_BYTES);
         Serial.flush();
-        Serial.write("\n");
     }
 }
