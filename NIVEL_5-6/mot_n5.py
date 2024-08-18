@@ -44,6 +44,14 @@ d_uv_index        = []
 # Datetime variables
 time_format = "%d-%m-%Y;%H:%M:%S"
 
+# Threshold for Outliers
+temperature_outlier     = 40.0
+humidity_outlier        = 100.1
+visible_light_outlier   = 20000
+ir_light_outlier        = 20000
+uv_index_outlier        = 15.0
+control_mode_outlier    = 2
+
 def store_application_data(data_line):
     global date            
     global hour           
@@ -54,15 +62,34 @@ def store_application_data(data_line):
     global uv_index        
     global control_mode  
 
-    # Stores data into respective arrays
-    date            .append(data_line[data_indexes.DATE_INDEX.value])
-    hour            .append(data_line[data_indexes.HOUR_INDEX.value])
-    temperature     .append(float(data_line[data_indexes.TEMPERATURE_INDEX.value]))
-    humidity        .append(float(data_line[data_indexes.HUMIDITY_INDEX.value]))
-    visible_light   .append(int(data_line[data_indexes.VISIBLE_LIGHT_INDEX.value]))
-    ir_light        .append(int(data_line[data_indexes.IR_LIGHT_INDEX.value]))
-    uv_index        .append(float(data_line[data_indexes.UV_INDEX.value]))
-    control_mode    .append(int(data_line[data_indexes.CONTROL_MODE_INDEX.value]))
+    # Stores each data value into a temporary variable
+    current_date = data_line[data_indexes.DATE_INDEX.value]
+    current_hour = data_line[data_indexes.HOUR_INDEX.value]
+    current_temperature     = float   (data_line[data_indexes.TEMPERATURE_INDEX   .value])
+    current_humidity        = float   (data_line[data_indexes.HUMIDITY_INDEX      .value])
+    current_visible_light   = int     (data_line[data_indexes.VISIBLE_LIGHT_INDEX .value])
+    current_ir_light        = int     (data_line[data_indexes.IR_LIGHT_INDEX      .value])
+    current_uv_index        = float   (data_line[data_indexes.UV_INDEX            .value])
+    current_control_mode    = int     (data_line[data_indexes.CONTROL_MODE_INDEX  .value])
+
+    # If none of the values is an outlier, store the data line
+    if (
+        current_temperature     < temperature_outlier   and
+        current_humidity        < humidity_outlier      and
+        current_visible_light   < visible_light_outlier and
+        current_ir_light        < ir_light_outlier      and
+        current_uv_index        < uv_index_outlier      and
+        current_control_mode    < control_mode_outlier
+    ):
+        # Stores data into respective arrays
+        date            .append(current_date)
+        hour            .append(current_hour)
+        temperature     .append(current_temperature)
+        humidity        .append(current_humidity)
+        visible_light   .append(current_visible_light)
+        ir_light        .append(current_ir_light)
+        uv_index        .append(current_uv_index)
+        control_mode    .append(current_control_mode)
 
 def read_application_data():
     global date            
@@ -128,8 +155,6 @@ def compute_abstraction_data():
             d_visible_light     .append(0)
             d_ir_light          .append(0)
             d_uv_index          .append(0)
-
-    print(d_ir_light)
 
 def store_abstraction_data():
     abstraction_data_file = open(abstraction_data_file_location, 'a')
