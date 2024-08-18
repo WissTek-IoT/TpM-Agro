@@ -34,6 +34,7 @@ control_mode    = []
 
 # Abstraction arrays
 time_interval     = []
+elapsed_time      = []
 d_temperature     = []
 d_humidity        = []
 d_visible_light   = []
@@ -92,7 +93,8 @@ def compute_abstraction_data():
     global uv_index        
     global control_mode  
 
-    global time_interval                   
+    global time_interval        
+    global elapsed_time           
     global d_temperature     
     global d_humidity        
     global d_visible_light   
@@ -101,9 +103,13 @@ def compute_abstraction_data():
 
     for i in range(len(date)):
         if (i != 0):
+            # Calculate elapsed time
+            initial_time    = datetime.strptime(str(date[0] + ';' + hour[0]), time_format)
+            current_time    = datetime.strptime(str(date[i] + ';' + hour[i])    , time_format)
+            elapsed_time.append((current_time-initial_time).total_seconds())
+
             # Calculate time interval
             previous_time   = datetime.strptime(str(date[i-1] + ';' + hour[i-1]), time_format)
-            current_time    = datetime.strptime(str(date[i] + ';' + hour[i])    , time_format)
             delta_seconds = (current_time - previous_time).total_seconds()
             time_interval.append(int(delta_seconds))
 
@@ -115,6 +121,7 @@ def compute_abstraction_data():
             d_uv_index          .append((uv_index[i]        - uv_index[i-1])        /time_interval[i])
         else :
             # We cannot calculate derivatives for the 1st data line
+            elapsed_time        .append(0)
             time_interval       .append(9999999)
             d_temperature       .append(0)
             d_humidity          .append(0)
@@ -137,6 +144,7 @@ def store_abstraction_data():
                 ir_light[i],
                 uv_index[i],
                 control_mode[i],
+                elapsed_time[i],
                 time_interval[i],
                 d_temperature[i],
                 d_humidity[i],
