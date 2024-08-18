@@ -1,18 +1,7 @@
 import serial
-import time
 from enum import Enum
-
-PACKET_BYTES     = 52
-MY_ID            = 1
-RECEIVER_ID      = 11
-SERIAL_BAUD_RATE = 9600
-
-temperature             = 0
-humidity                = 0
-visible_light_intensity = 0
-ir_light_intensity      = 0
-uv_index                = 0
-control_mode            = 0
+import time
+import os
 
 class packet_indexes(Enum):
     # Physical Layer
@@ -77,10 +66,28 @@ class packet_indexes(Enum):
     APP35 = 50
     APP36 = 51
 
-serial_port = "COM6"
-
+# MoT Parameters and Variables
+PACKET_BYTES     = 52
+MY_ID            = 1
+RECEIVER_ID      = 11
 dl_packet = [0]*PACKET_BYTES
 ul_packet = [0]*PACKET_BYTES
+SERIAL_BAUD_RATE = 9600
+serial_port = "COM6"
+
+# Application Data
+temperature             = 0
+humidity                = 0
+visible_light_intensity = 0
+ir_light_intensity      = 0
+uv_index                = 0
+control_mode            = 0
+
+# Files
+    # Creates the application data file if it already not exists
+application_data_file_location  = os.path.join(os.path.dirname(__file__), '../NIVEL_4/application_data.txt')
+application_data_file           = open(application_data_file_location, 'a')
+application_data_file.close()
 
 # Init Serial communication
 while True:
@@ -207,6 +214,29 @@ def read_application_packet():
 
     debug_application_data(True)
 
+# Stores the application data into the application_data.txt file
+def store_application_data():
+    application_data_file = open(application_data_file_location, 'a')
+    if (application_data_file.writable()):
+        data_to_write = [
+            time.strftime("%d-%m-%Y;%H:%M:%S"),
+            temperature,
+            humidity,
+            visible_light_intensity,
+            ir_light_intensity,
+            uv_index,
+            control_mode,
+            "\n"
+        ]
+        
+        # Converts all data to string and then separate it by semicolons
+        temp = list(map(str, data_to_write))
+        res = ";".join(temp)
+
+        # Stores data into text file
+        application_data_file.write(res)
+    application_data_file.close()
+
 # Main code (loop)
 while True:
     send_packet()
@@ -217,6 +247,7 @@ while True:
     if len(ul_packet) == PACKET_BYTES:
         debug_received_packet(False)
         read_application_packet()
+        store_application_data()
     else:
         print("Perdeu pacote")
         ser.reset_input_buffer()
