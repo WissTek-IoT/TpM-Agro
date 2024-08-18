@@ -49,7 +49,9 @@ void send_mot_packet() {
         assemble_mot_packet();
 
         // Sends packet and waits for the transmission to complete
+        Serial.write("ini");
         Serial.write(ul_packet, PACKET_BYTES);
+        Serial.write("end\n");
         Serial.flush();
     }
 }

@@ -15,10 +15,4 @@ void loop() {
 
   run_application();
   receive_mot_packet();
-  // if (current_time - last_time >= 1000) {
-  //   // begin = micros();
-  //   send_mot_packet();
-  //   // Serial.println((micros()-begin)/1000.0);
-  //   last_time = current_time;
-  // }
 }

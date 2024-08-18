@@ -13,6 +13,7 @@
     #define SERIAL_BAUD_RATE    9600
 
 // GLOBAL VARIABLES
+extern String teste_ul_packet;
 extern byte dl_packet[PACKET_BYTES];
 extern byte ul_packet[PACKET_BYTES];
 extern uint32_t dl_packet_counter;
