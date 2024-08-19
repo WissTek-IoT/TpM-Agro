@@ -153,7 +153,7 @@ def store_command_variables(commands):
     hour_to_turn_off_light      = str(commands[7])
 
     # If the system is in automatic periodic mode, controls light based on current hour
-    if (control_mode == 1 and ul_packet[packet_indexes.AUTOMATIC_MODE_TYPE.value] == 0):
+    if (control_mode == 1 and automatic_mode_type == 0):
         control_light_based_on_time()
 
 
@@ -176,6 +176,7 @@ def read_commands_file():
 
 def assemble_dl_packet():
     global dl_packet
+    global automatic_mode_type
 
     read_commands_file()
 
