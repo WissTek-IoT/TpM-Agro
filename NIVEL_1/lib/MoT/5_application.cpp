@@ -13,8 +13,8 @@ controller_type control;
 // Control Variables
 uint8_t pump_signal     = 0;
 uint8_t light_signal    = 0;
-uint16_t pump_activation_interval = 60;
-uint16_t pump_activation_duration = 5;
+uint16_t pump_activation_interval = 8000;
+uint16_t pump_activation_duration = 2000;
 uint8_t automatic_mode_type       = 0;
 
 unsigned long current_time = 0;
