@@ -38,6 +38,7 @@ pump_enabled    = []
 light_enabled   = []
 
 # Abstraction arrays
+hour_in_seconds   = []
 time_interval     = []
 elapsed_time      = []
 d_temperature     = []
@@ -56,6 +57,11 @@ visible_light_outlier   = 20000
 ir_light_outlier        = 20000
 uv_index_outlier        = 15.0
 control_mode_outlier    = 2
+
+def get_seconds(time_str):
+    """Get seconds from time."""
+    h, m, s = time_str.split(':')
+    return int(h) * 3600 + int(m) * 60 + int(s)
 
 def store_application_data(data_line):
     global date            
@@ -135,6 +141,7 @@ def compute_abstraction_data():
     global pump_enabled 
     global light_enabled
 
+    global hour_in_seconds
     global time_interval        
     global elapsed_time           
     global d_temperature     
@@ -144,6 +151,8 @@ def compute_abstraction_data():
     global d_uv_index         
 
     for i in range(len(date)):
+        hour_in_seconds.append(get_seconds(hour[i]))
+
         if (i != 0):
             # Calculate elapsed time
             initial_time    = datetime.strptime(str(date[0] + ';' + hour[0])    ,time_format)   # Merges separated date and hour presented in time_format format into a datetime instance
@@ -176,8 +185,9 @@ def store_abstraction_data():
     if (abstraction_data_file.writable()):
         for i in range(len(date)):
             data_to_write = [
-                date[i],
-                hour[i],
+                # date[i],
+                # hour[i],
+                hour_in_seconds[i],
                 temperature[i],
                 humidity[i],
                 visible_light[i],
