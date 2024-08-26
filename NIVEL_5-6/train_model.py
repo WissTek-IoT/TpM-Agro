@@ -1,6 +1,7 @@
 import os
 import numpy as np
 import tensorflow as tf
+import matplotlib.pyplot as plt
 import logging
 logging.getLogger("tensorflow").setLevel(logging.ERROR)
 tf.autograph.set_verbosity(0)
@@ -8,6 +9,7 @@ tf.autograph.set_verbosity(0)
 # Files
 abstraction_data_file_location  = os.path.join(os.path.dirname(__file__), '../NIVEL_4/abstraction_data.txt')
 validation_data_file_location   = os.path.join(os.path.dirname(__file__), '../NIVEL_4/validation_data.txt')
+model_file_location             = os.path.join(os.path.dirname(__file__), '..NIVEL_4/')
 
 # Functions
 def read_validation_data():
@@ -59,22 +61,15 @@ def read_abstraction_data():
 # Stores input variables into X and respective outputs into Y
 X, Y            = read_abstraction_data()
 X_val, Y_val    = read_validation_data()
-Xn = X
+
 # Normalize input values X
 normalization = tf.keras.layers.Normalization(axis=-1)  # Creates a normalization instance
 normalization.adapt(X)                                  # Learns mean and variance from input dataset X
-# Xn = normalization(X)                                   # Based on what was learned, normalize the given dataset
-# X_val = normalization(X_val)
-
-print(f"Temperature Max, Min pre normalization: {np.max(X[:,1]):0.2f}, {np.min(X[:,1]):0.2f}")
-print(f"Humidity    Max, Min pre normalization: {np.max(X[:,2]):0.2f}, {np.min(X[:,2]):0.2f}")
-print(f"Temperature Max, Min post normalization: {np.max(Xn[:,1]):0.2f}, {np.min(Xn[:,1]):0.2f}")
-print(f"Humidity    Max, Min post normalization: {np.max(Xn[:,2]):0.2f}, {np.min(Xn[:,2]):0.2f}")
 
 # Creates the Machine Learning Model
 model = tf.keras.Sequential([
     normalization,
-    tf.keras.layers.Dense(128, activation='relu'),
+    tf.keras.layers.Dense(8, activation='relu'),
     tf.keras.layers.Dense(4)
 ])
 
@@ -82,7 +77,18 @@ model.compile(optimizer='adam',
               loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
               metrics=['accuracy'])
 
-model.fit(Xn, Y, epochs=5)
+history = model.fit(X, Y, epochs=10)
+
+# # Prints the cost over epoch
+# # summarize history for loss
+# # print(history.history['accuracy'])
+# plt.plot(history.history['accuracy'])
+# plt.plot(history.history['loss'])
+# plt.title('model loss')
+# plt.ylabel('loss')
+# plt.xlabel('epoch')
+# plt.legend(['accuracy', 'loss'], loc='upper left')
+# plt.show()
 
 # Validates model using the given training set
 test_loss, test_accuracy = model.evaluate(X_val,  Y_val, verbose=2)
@@ -100,3 +106,6 @@ single_prediction = probability_model.predict(single_input)
 single_prediction = np.argmax(single_prediction)
 print(("Predicted output: {}\n"+
        "Real output: {}").format(single_prediction, Y_val[55]))
+
+model.save('NIVEL_4/model_data.keras')
+print("O modelo foi salvo na pasta NIVEL_4")
