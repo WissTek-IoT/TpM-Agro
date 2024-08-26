@@ -208,8 +208,8 @@ def store_abstraction_data():
                 d_ir_light[i],
                 d_uv_index[i],
                 output_label[i],
-                pump_enabled[i],
-                light_enabled[i],
+                # pump_enabled[i],
+                # light_enabled[i],
                 "\n"
             ]
             
