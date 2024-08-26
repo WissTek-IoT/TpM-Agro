@@ -19,7 +19,7 @@ class data_indexes(Enum):
     LIGHT_ENABLED_INDEX = 9
 
 # Files
-application_data_file_location  = os.path.join(os.path.dirname(__file__), '../NIVEL_4/application_data.txt')
+application_data_file_location  = os.path.join(os.path.dirname(__file__), '../NIVEL_4/test_data.txt')
 
 abstraction_data_file_location  = os.path.join(os.path.dirname(__file__), '../NIVEL_4/abstraction_data.txt')
 abstraction_data_file           = open(abstraction_data_file_location, 'a+')
@@ -34,6 +34,7 @@ visible_light   = []
 ir_light        = []
 uv_index        = []
 control_mode    = []
+output_label    = []
 pump_enabled    = []
 light_enabled   = []
 
@@ -72,6 +73,7 @@ def store_application_data(data_line):
     global ir_light        
     global uv_index        
     global control_mode  
+    global output_label
     global pump_enabled
     global light_enabled
 
@@ -86,6 +88,7 @@ def store_application_data(data_line):
     current_control_mode    = int     (data_line[data_indexes.CONTROL_MODE_INDEX  .value])
     current_pump_enabled    = int     (data_line[data_indexes.PUMP_ENABLED_INDEX  .value])
     current_light_enabled   = int     (data_line[data_indexes.LIGHT_ENABLED_INDEX .value])
+    current_output_label    =         (current_pump_enabled + (current_light_enabled << 1)) # Combine output variables to form a single label, useful for the ML algorithm
 
     # If none of the values is an outlier, store the data line
     if (
@@ -107,6 +110,7 @@ def store_application_data(data_line):
         control_mode    .append(current_control_mode)
         pump_enabled    .append(current_pump_enabled)
         light_enabled   .append(current_light_enabled)
+        output_label    .append(current_output_label)
 
 def read_application_data():
     global date            
@@ -117,10 +121,11 @@ def read_application_data():
     global ir_light        
     global uv_index        
     global control_mode    
+    global output_label
     global pump_enabled    
     global light_enabled    
 
-    application_data_file = open(application_data_file_location, 'r')
+    application_data_file = open(application_data_file_location, 'r', encoding='utf-8-sig')
 
     for line in application_data_file:
         # Separates data from semicolon
@@ -138,6 +143,7 @@ def compute_abstraction_data():
     global ir_light        
     global uv_index        
     global control_mode  
+    global output_label
     global pump_enabled 
     global light_enabled
 
@@ -201,6 +207,7 @@ def store_abstraction_data():
                 d_visible_light[i],
                 d_ir_light[i],
                 d_uv_index[i],
+                output_label[i],
                 pump_enabled[i],
                 light_enabled[i],
                 "\n"
