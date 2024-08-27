@@ -1,6 +1,9 @@
 from datetime import datetime
 import os
+os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 from enum import Enum
+import numpy as np
+import tensorflow as tf
 
 class data_indexes(Enum):
     DATE_INDEX          = 0
@@ -24,6 +27,7 @@ abstraction_data_file_location  = os.path.join(os.path.dirname(__file__), '../L4
 training_data_file_location     = os.path.join(os.path.dirname(__file__), '../L4_Storage/training_data.txt')
 validation_data_file_location   = os.path.join(os.path.dirname(__file__), '../L4_Storage/validation_data.txt')
 prediction_queue_file_location  = os.path.join(os.path.dirname(__file__), '../L4_Storage/prediction_queue.txt')
+model_file_location             = 'L4_Storage/model.keras'
 
 
 # Data arrays
@@ -60,6 +64,9 @@ ir_light_outlier        = 20000
 uv_index_outlier        = 15.0
 control_mode_outlier    = 2
 
+# Functions
+
+    # Data Processing Functions
 def get_seconds(time_str):
     """Get seconds from time."""
     h, m, s = time_str.split(':')
@@ -292,11 +299,57 @@ def store_validation_data(starting_index):
             validation_data_file.write(res)
     validation_data_file.close()
 
+    # Machine Learning Functions
+def read_training_data():
+    X = []
+    Y = []
+
+    # Open training data file and stores its inputs and respective outputs
+    training_data_file = open(training_data_file_location, 'r', encoding='utf-8-sig')
+    for line in training_data_file:
+        # Separates data from semicolon
+        line = line.strip()
+        data_line = line.split(';')
+
+        # Separates input (X) and output (Y) data
+        X.append(data_line[:14])
+        Y.append(data_line[-2:-1])
+
+    # Converts data into a numpy array
+    X = np.array(X).astype(float)
+    Y = np.array(Y).astype(int).flatten()
+
+    # print(( "Input Shape: {} \n"+
+    #         "Output Shape: {}").format(X.shape, Y.shape))
+    
+    return X, Y
+
+def read_validation_data():
+    X = []
+    Y = []
+
+    # Open validation file and stores its inputs and respective outputs
+    validation_data_file = open(validation_data_file_location, 'r', encoding='utf-8-sig')
+    for line in validation_data_file:
+        # Separates data from semicolon
+        line = line.strip()
+        data_line = line.split(';')
+
+        # Separates input (X) and output (Y) data
+        X.append(data_line[:14])
+        Y.append(data_line[-2:-1])
+
+    # Converts data into a numpy array
+    X = np.array(X).astype(float)
+    Y = np.array(Y).astype(int).flatten()
+    
+    return X, Y
+
 # Main Code
 user_input = int(input("Select between: Train ML Model (0) | Run ML Model (1)\n"))
 
 if (user_input == 0):
-    print("You chose to train the Machine Learning Model.")
+    print("\nYou chose to train the Machine Learning Model.")
 
     print("Computing abstraction data...")
     read_application_data()
@@ -313,8 +366,38 @@ if (user_input == 0):
     store_training_data(training_data_length)
     store_validation_data(training_data_length)
 
+    # Reads data
+    X_train, Y_train = read_training_data()
+    X_valid, Y_valid = read_validation_data()
+    # Normalize input values X
+    normalization = tf.keras.layers.Normalization(axis=-1)  # Creates a normalization instance
+    normalization.adapt(X_train)                            # Learns mean and variance from input dataset X
+    # Creates the Machine Learning Model
+    model = tf.keras.Sequential([
+        normalization,
+        tf.keras.layers.Dense(128, activation='relu'),
+        tf.keras.layers.Dense(4)
+    ])
+    print("\nPerforming trainning...")
+    model.compile(optimizer='adam',
+                loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+                metrics=['accuracy'])
+    history = model.fit(X_train, Y_train, epochs=10)
+    print("Finished training.")
+    print(model.summary())
 
-    print("Performing trainning...")
+    print("\nValidating model...")
+    valid_loss, valid_accuracy = model.evaluate(X_valid,  Y_valid, verbose=0)
+
+    # Computes predicted output for each validation set's input
+    probability_model               = tf.keras.Sequential([model, tf.keras.layers.Softmax()])
+    predictions_for_validation_set  = probability_model.predict(X_valid)
+    print(f"Accuracy: {round(100*valid_accuracy,3)}%")
+    print(f"Loss: {round(100*valid_loss,3)}%")
+
+    model.save(model_file_location)
+    print("\nModel was saved on L4_Storage")
+
 elif (user_input == 1):
     print("Run ML")
 else:
