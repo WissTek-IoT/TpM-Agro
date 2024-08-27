@@ -369,7 +369,7 @@ def store_application_data():
 
     data_to_predict_file = open(data_to_predict_file_location, 'w+')
     if (data_to_predict_file.writable()):
-        data_to_predict_file.write("1\n")
+        data_to_predict_file.write(str(data_counter)+"\n")
         data_to_predict_file.write(first_dataset)
         data_to_predict_file.write(previous_dataset)
         data_to_predict_file.write(current_dataset)
