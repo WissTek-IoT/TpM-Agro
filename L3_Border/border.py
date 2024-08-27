@@ -95,7 +95,7 @@ previous_dataset        = ""
 # Files
     # Creates the application data file if it already not exists
 application_data_file_location  = os.path.join(os.path.dirname(__file__), '../L4_Storage/application_data.txt')
-data_to_predict_file_location   = os.path.join(os.path.dirname(__file__), '../L4_Storage/data_to_predict.txt')
+prediction_queue_file_location   = os.path.join(os.path.dirname(__file__), '../L4_Storage/prediction_queue.txt')
 application_data_file           = open(application_data_file_location, 'a')
 application_data_file.close()
 
@@ -367,13 +367,13 @@ def store_application_data():
         data_counter += 1
     application_data_file.close()
 
-    data_to_predict_file = open(data_to_predict_file_location, 'w+')
-    if (data_to_predict_file.writable()):
-        data_to_predict_file.write(str(data_counter)+"\n")
-        data_to_predict_file.write(first_dataset)
-        data_to_predict_file.write(previous_dataset)
-        data_to_predict_file.write(current_dataset)
-    data_to_predict_file.close()
+    prediction_queue_file = open(prediction_queue_file_location, 'w+')
+    if (prediction_queue_file.writable()):
+        prediction_queue_file.write(str(data_counter)+"\n")
+        prediction_queue_file.write(first_dataset)
+        prediction_queue_file.write(previous_dataset)
+        prediction_queue_file.write(current_dataset)
+    prediction_queue_file.close()
 
 # Main code (loop)
 while True:
