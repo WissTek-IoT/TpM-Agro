@@ -19,9 +19,9 @@ class data_indexes(Enum):
     LIGHT_ENABLED_INDEX = 9
 
 # Files
-application_data_file_location  = os.path.join(os.path.dirname(__file__), '../NIVEL_4/test_data.txt')
-
-abstraction_data_file_location  = os.path.join(os.path.dirname(__file__), '../NIVEL_4/abstraction_data.txt')
+application_data_file_location  = os.path.join(os.path.dirname(__file__), '../L4_Storage/test_data.txt')
+prediction_queue_file_location  = os.path.join(os.path.dirname(__file__), '../L4_Storage/prediction_queue.txt')
+abstraction_data_file_location  = os.path.join(os.path.dirname(__file__), '../L4_Storage/abstraction_data.txt')
 abstraction_data_file           = open(abstraction_data_file_location, 'a+')
 abstraction_data_file.close()
 
@@ -187,7 +187,7 @@ def compute_abstraction_data():
             d_uv_index          .append(0)
 
 def store_abstraction_data():
-    abstraction_data_file = open(abstraction_data_file_location, 'a')
+    abstraction_data_file = open(abstraction_data_file_location, 'w+')
     if (abstraction_data_file.writable()):
         for i in range(len(date)):
             data_to_write = [
@@ -221,6 +221,19 @@ def store_abstraction_data():
             abstraction_data_file.write(res)
     abstraction_data_file.close()
 
-read_application_data()
-compute_abstraction_data()
-store_abstraction_data()
+user_input = int(input("Select between: Train ML Model (0) | Run ML Model (1)\n"))
+
+if (user_input == 0):
+    print("You chose to train the Machine Learning Model.")
+
+    print("Computing abstraction data...")
+    read_application_data()
+    compute_abstraction_data()
+    store_abstraction_data()
+    
+    print("Performing trainning...")
+elif (user_input == 1):
+    print("Run ML")
+else:
+    print("Command not recognized.")
+
