@@ -85,14 +85,22 @@ control_mode            = 0
 pump_enabled            = 0
 light_enabled           = 0
 
+# Border Data
+timestamp               = ""
+data_counter            = 0
+first_dataset           = ""
+current_dataset         = ""
+previous_dataset        = ""
+
 # Files
     # Creates the application data file if it already not exists
-application_data_file_location  = os.path.join(os.path.dirname(__file__), '../NIVEL_4/application_data.txt')
+application_data_file_location  = os.path.join(os.path.dirname(__file__), '../L4_Storage/application_data.txt')
+data_to_predict_file_location   = os.path.join(os.path.dirname(__file__), '../L4_Storage/data_to_predict.txt')
 application_data_file           = open(application_data_file_location, 'a')
 application_data_file.close()
 
     # Commands File
-commands_file_location  = os.path.join(os.path.dirname(__file__), '../NIVEL_4/commands.txt')
+commands_file_location  = os.path.join(os.path.dirname(__file__), '../L4_Storage/commands.txt')
 
 # Commands
 communication_interval      = 1.0
@@ -320,10 +328,18 @@ def read_application_packet():
 
 # Stores the application data into the application_data.txt file
 def store_application_data():
+    global timestamp
+    global data_counter
+    global first_dataset
+    global current_dataset
+    global previous_dataset
+
     application_data_file = open(application_data_file_location, 'a')
     if (application_data_file.writable()):
+        timestamp = time.strftime("%d-%m-%Y;%H:%M:%S")
+
         data_to_write = [
-            time.strftime("%d-%m-%Y;%H:%M:%S"),
+            timestamp,
             temperature,
             humidity,
             visible_light_intensity,
@@ -341,7 +357,23 @@ def store_application_data():
 
         # Stores data into text file
         application_data_file.write(res)
+
+        # Saves dataset
+        if (data_counter == 0):
+            first_dataset = res
+        previous_dataset    = current_dataset
+        current_dataset     = res
+        
+        data_counter += 1
     application_data_file.close()
+
+    data_to_predict_file = open(data_to_predict_file_location, 'w+')
+    if (data_to_predict_file.writable()):
+        data_to_predict_file.write("1\n")
+        data_to_predict_file.write(first_dataset)
+        data_to_predict_file.write(previous_dataset)
+        data_to_predict_file.write(current_dataset)
+    data_to_predict_file.close()
 
 # Main code (loop)
 while True:
