@@ -19,11 +19,12 @@ class data_indexes(Enum):
     LIGHT_ENABLED_INDEX = 9
 
 # Files
-application_data_file_location  = os.path.join(os.path.dirname(__file__), '../L4_Storage/test_data.txt')
-prediction_queue_file_location  = os.path.join(os.path.dirname(__file__), '../L4_Storage/prediction_queue.txt')
+application_data_file_location  = os.path.join(os.path.dirname(__file__), '../L4_Storage/application_data.txt')
 abstraction_data_file_location  = os.path.join(os.path.dirname(__file__), '../L4_Storage/abstraction_data.txt')
-abstraction_data_file           = open(abstraction_data_file_location, 'a+')
-abstraction_data_file.close()
+training_data_file_location     = os.path.join(os.path.dirname(__file__), '../L4_Storage/training_data.txt')
+validation_data_file_location   = os.path.join(os.path.dirname(__file__), '../L4_Storage/validation_data.txt')
+prediction_queue_file_location  = os.path.join(os.path.dirname(__file__), '../L4_Storage/prediction_queue.txt')
+
 
 # Data arrays
 date            = []
@@ -221,6 +222,77 @@ def store_abstraction_data():
             abstraction_data_file.write(res)
     abstraction_data_file.close()
 
+def store_training_data(final_index):
+    training_data_file = open(training_data_file_location, 'w+')
+    if (training_data_file.writable()):
+        for i in range(final_index):
+            data_to_write = [
+                # date[i],
+                # hour[i],
+                hour_in_seconds[i],
+                temperature[i],
+                humidity[i],
+                visible_light[i],
+                ir_light[i],
+                uv_index[i],
+                control_mode[i],
+                elapsed_time[i],
+                time_interval[i],
+                d_temperature[i],
+                d_humidity[i],
+                d_visible_light[i],
+                d_ir_light[i],
+                d_uv_index[i],
+                output_label[i],
+                # pump_enabled[i],
+                # light_enabled[i],
+                "\n"
+            ]
+            
+            # Converts all data to string and then separate it by semicolons
+            temp = list(map(str, data_to_write))
+            res = ";".join(temp)
+
+            # Stores data into text file
+            training_data_file.write(res)
+    training_data_file.close()
+
+def store_validation_data(starting_index):
+    validation_data_file = open(validation_data_file_location, 'w+')
+    if (validation_data_file.writable()):
+        for i in range(starting_index, len(date)):
+            data_to_write = [
+                # date[i],
+                # hour[i],
+                hour_in_seconds[i],
+                temperature[i],
+                humidity[i],
+                visible_light[i],
+                ir_light[i],
+                uv_index[i],
+                control_mode[i],
+                elapsed_time[i],
+                time_interval[i],
+                d_temperature[i],
+                d_humidity[i],
+                d_visible_light[i],
+                d_ir_light[i],
+                d_uv_index[i],
+                output_label[i],
+                # pump_enabled[i],
+                # light_enabled[i],
+                "\n"
+            ]
+            
+            # Converts all data to string and then separate it by semicolons
+            temp = list(map(str, data_to_write))
+            res = ";".join(temp)
+
+            # Stores data into text file
+            validation_data_file.write(res)
+    validation_data_file.close()
+
+# Main Code
 user_input = int(input("Select between: Train ML Model (0) | Run ML Model (1)\n"))
 
 if (user_input == 0):
@@ -230,7 +302,18 @@ if (user_input == 0):
     read_application_data()
     compute_abstraction_data()
     store_abstraction_data()
-    
+    print("Abstraction data processed.\n")
+
+    total_data_length       = len(date)
+    training_data_length    = round(0.7*total_data_length)
+    validation_data_length  = total_data_length - training_data_length
+    print(f"Total data: {total_data_length} lines")
+    print(f"70% of total data ({training_data_length} lines) will be used to train the model")
+    print(f"30% of total data ({validation_data_length} lines) will be used to validate the model")
+    store_training_data(training_data_length)
+    store_validation_data(training_data_length)
+
+
     print("Performing trainning...")
 elif (user_input == 1):
     print("Run ML")
