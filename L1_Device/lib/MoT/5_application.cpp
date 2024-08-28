@@ -13,8 +13,8 @@ controller_type control;
 // Control Variables
 uint8_t pump_signal     = 0;
 uint8_t light_signal    = 0;
-uint32_t pump_activation_interval = 30*60*1000;
-uint32_t pump_activation_duration = 30000;
+unsigned long pump_activation_interval = 1800000;
+unsigned long pump_activation_duration = 30000;
 uint8_t automatic_mode_type       = 0;
 
 unsigned long current_time = 0;
@@ -67,8 +67,8 @@ void read_application_layer_packet() {
     pump_signal     = dl_packet[PUMP_SIGNAL];
     light_signal    = dl_packet[LIGHT_SIGNAL];
 
-    pump_activation_duration = (256*dl_packet[PUMP_DURATION_BYTE_1] + dl_packet[PUMP_DURATION_BYTE_0]) * 1000; // Assembles the data and converts into milliseconds
-    pump_activation_interval = (256*dl_packet[PUMP_INTERVAL_BYTE_1] + dl_packet[PUMP_INTERVAL_BYTE_0]) * 1000; // Same as above
+    pump_activation_duration = (256*(unsigned long)dl_packet[PUMP_DURATION_BYTE_1] + (unsigned long)dl_packet[PUMP_DURATION_BYTE_0]) * 1000; // Assembles the data and converts into milliseconds
+    pump_activation_interval = (256*(unsigned long)dl_packet[PUMP_INTERVAL_BYTE_1] + (unsigned long)dl_packet[PUMP_INTERVAL_BYTE_0]) * 1000; // Same as above
 
     automatic_mode_type = dl_packet[AUTOMATIC_MODE_TYPE];
 }
