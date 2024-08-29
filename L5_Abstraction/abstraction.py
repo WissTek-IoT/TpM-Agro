@@ -29,8 +29,7 @@ validation_data_file_location   = os.path.join(os.path.dirname(__file__), '../L4
 prediction_queue_file_location  = os.path.join(os.path.dirname(__file__), '../L4_Storage/prediction_queue.txt')
 model_file_location             = 'L4_Storage/model.keras'
 
-
-# Data arrays
+# Data variables
 date            = []
 hour            = []
 temperature     = []
@@ -43,7 +42,7 @@ output_label    = []
 pump_enabled    = []
 light_enabled   = []
 
-# Abstraction arrays
+# Abstraction variables
 hour_in_seconds   = []
 time_interval     = []
 elapsed_time      = []
@@ -52,6 +51,7 @@ d_humidity        = []
 d_visible_light   = []
 d_ir_light        = []
 d_uv_index        = []
+last_data_counter = -1
 
 # Datetime variables
 time_format = "%d-%m-%Y;%H:%M:%S"
@@ -277,7 +277,7 @@ def store_validation_data(starting_index):
                 visible_light[i],
                 ir_light[i],
                 uv_index[i],
-                control_mode[i],
+                # control_mode[i],
                 elapsed_time[i],
                 time_interval[i],
                 d_temperature[i],
@@ -345,6 +345,41 @@ def read_validation_data():
     
     return X, Y
 
+def read_prediction_queue():
+    data_in_file    = []
+
+    prediction_queue_file = open(prediction_queue_file_location, 'r', encoding='utf-8-sig')
+    for line in prediction_queue_file:
+        # Separates data from semicolon
+        line = line.strip()
+        data_line = line.split(';')
+        data_in_file.append(data_line)
+
+    for i in range(len(data_in_file)):
+        if i > 0:
+            data_in_file[i][data_indexes.TEMPERATURE_INDEX.value]   = float(data_in_file[i][data_indexes.TEMPERATURE_INDEX.value])
+            data_in_file[i][data_indexes.HUMIDITY_INDEX.value]      = float(data_in_file[i][data_indexes.HUMIDITY_INDEX.value])
+            data_in_file[i][data_indexes.VISIBLE_LIGHT_INDEX.value] = int(data_in_file[i][data_indexes.VISIBLE_LIGHT_INDEX.value])
+            data_in_file[i][data_indexes.IR_LIGHT_INDEX.value]      = int(data_in_file[i][data_indexes.IR_LIGHT_INDEX.value])
+            data_in_file[i][data_indexes.UV_INDEX.value]            = float(data_in_file[i][data_indexes.UV_INDEX.value])
+            data_in_file[i][data_indexes.PUMP_ENABLED_INDEX.value]  = int(data_in_file[i][data_indexes.PUMP_ENABLED_INDEX.value])
+            data_in_file[i][data_indexes.LIGHT_ENABLED_INDEX.value] = int(data_in_file[i][data_indexes.LIGHT_ENABLED_INDEX.value])
+            data_in_file[i][data_indexes.VISIBLE_LIGHT_INDEX.value] = int(data_in_file[i][data_indexes.VISIBLE_LIGHT_INDEX.value])
+        else:
+            data_in_file[i][i] = int(data_in_file[i][i])
+
+    return data_in_file
+
+def compute_abstraction_for_prediction_queue(data_in_file):
+    global last_data_counter
+
+    data_counter = data_in_file[0][0]
+    # Only go forward if new data is received
+    if (data_counter != last_data_counter):
+        last_data_counter = data_counter
+
+    print(data_in_file)
+
 # Main Code
 user_input = int(input("Select between: Train ML Model (0) | Run ML Model (1)\n"))
 
@@ -399,7 +434,34 @@ if (user_input == 0):
     print("\nModel was saved on L4_Storage")
 
 elif (user_input == 1):
-    print("Run ML")
+    model = tf.keras.models.load_model(model_file_location)
+    print("You chose to run the Machine Learning model below:")
+    print(model.summary())
+    probability_model = tf.keras.Sequential([model, tf.keras.layers.Softmax()])
+
+    prediction_queue = read_prediction_queue()
+    compute_abstraction_for_prediction_queue(prediction_queue)
+
+    # X_valid, Y_valid    = read_validation_data()
+    # # Gives an example for a prediction based on a single data
+    # current_input = X_valid[55]
+    # current_input = (np.expand_dims(current_input, 0))
+
+    # current_prediction  = probability_model.predict(current_input)
+    # prediction_label    = np.argmax(current_prediction)
+
+    # # Extracts the predicted value from the predicted label
+    # predicted_pump_signal  = prediction_label & 0x01 
+    # predicted_light_signal = prediction_label >> 1
+
+    # print(("\n\nPredicted output: {}\n"+
+    #     "Real output: {}\n"+
+    #     "Pump Signal: {} | Light Signal: {}\n" +
+    #     "Level of Confidence: {}%").format(prediction_label,
+    #                                         Y_valid[55], 
+    #                                         predicted_pump_signal,
+    #                                         predicted_light_signal,
+    #                                         100*current_prediction[0][prediction_label]))
 else:
     print("Command not recognized.")
 
