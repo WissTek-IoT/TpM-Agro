@@ -431,7 +431,24 @@ def compute_abstraction_for_prediction_queue(data_in_file):
             d_uv_index,
         ]
         last_data_counter = data_counter
-        print(input_for_prediction)
+        input_for_prediction = np.array(input_for_prediction).astype(float)
+
+        return True, input_for_prediction
+    
+    return False, -1
+
+def predict_system_output(input_for_prediction, model):
+    input = np.expand_dims(input_for_prediction, 0)
+
+    prediction          = model.predict(input)
+    prediction_label    = np.argmax(prediction)
+
+    # Extracts the predicted value from the predicted label
+    pump_signal         = prediction_label & 0x01
+    light_signal        = prediction_label >> 1
+    confidence_level    = round(prediction[0][prediction_label]*100, 2)
+
+    return pump_signal, light_signal, confidence_level
 
 # Main Code
 user_input = int(input("Select between: Train ML Model (0) | Run ML Model (1)\n"))
@@ -490,12 +507,15 @@ elif (user_input == 1):
     model = tf.keras.models.load_model(model_file_location)
     print("You chose to run the Machine Learning model below:")
     print(model.summary())
-    probability_model = tf.keras.Sequential([model, tf.keras.layers.Softmax()])
+    prediction_model = tf.keras.Sequential([model, tf.keras.layers.Softmax()])
 
     while True:
-        prediction_queue = read_prediction_queue()
-        compute_abstraction_for_prediction_queue(prediction_queue)
-
+        prediction_queue                    = read_prediction_queue()
+        valid_input, input_for_predicton    = compute_abstraction_for_prediction_queue(prediction_queue)
+        if (valid_input):
+            pump_signal, light_signal, confidence_level = predict_system_output(input_for_predicton, prediction_model)
+            print(pump_signal, light_signal, confidence_level)
+         
     # X_valid, Y_valid    = read_validation_data()
     # # Gives an example for a prediction based on a single data
     # current_input = X_valid[55]

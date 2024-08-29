@@ -1,14 +1,14 @@
 import tensorflow as tf
 import numpy as np
 
-model = tf.keras.models.load_model('NIVEL_4/model_data.keras')
+model = tf.keras.models.load_model('L4_Storage/model.keras')
 
 # # Show the model architecture
 # model.summary()
 
 # Functions
 import os
-validation_data_file_location   = os.path.join(os.path.dirname(__file__), '../NIVEL_4/validation_data.txt')
+validation_data_file_location   = os.path.join(os.path.dirname(__file__), '../L4_Storage/validation_data.txt')
 def read_validation_data():
     X = []
     Y = []
@@ -21,7 +21,7 @@ def read_validation_data():
         data_line = line.split(';')
 
         # Separates input (X) and output (Y) data
-        X.append(data_line[:14])
+        X.append(data_line[:13])
         Y.append(data_line[-2:-1])
 
     # Converts data into a numpy array
