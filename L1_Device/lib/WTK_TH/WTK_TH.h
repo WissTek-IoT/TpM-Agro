@@ -12,7 +12,7 @@ enum th_sensor_index{
 };
 
 // MACROS
-#define WTK_TH_INPUT_VOLTAGE                            5.0
+#define WTK_TH_INPUT_VOLTAGE                            4.65
 #define NUMBER_OF_WTK_TH_SENSORS                        2
 #define WTK_TEMPERATURE_READING_SAMPLE_TIME             5
 #define WTK_TEMPERATURE_NUMBER_OF_SAMPLES_PER_READING   100
