@@ -51,7 +51,7 @@ d_humidity        = []
 d_visible_light   = []
 d_ir_light        = []
 d_uv_index        = []
-last_data_counter = -1
+last_data_counter = 0
 
 # Datetime variables
 time_format = "%d-%m-%Y;%H:%M:%S"
@@ -207,7 +207,7 @@ def store_abstraction_data():
                 visible_light[i],
                 ir_light[i],
                 uv_index[i],
-                control_mode[i],
+                # control_mode[i],
                 elapsed_time[i],
                 time_interval[i],
                 d_temperature[i],
@@ -242,7 +242,7 @@ def store_training_data(final_index):
                 visible_light[i],
                 ir_light[i],
                 uv_index[i],
-                control_mode[i],
+                # control_mode[i],
                 elapsed_time[i],
                 time_interval[i],
                 d_temperature[i],
@@ -312,7 +312,7 @@ def read_training_data():
         data_line = line.split(';')
 
         # Separates input (X) and output (Y) data
-        X.append(data_line[:14])
+        X.append(data_line[:13])
         Y.append(data_line[-2:-1])
 
     # Converts data into a numpy array
@@ -336,7 +336,7 @@ def read_validation_data():
         data_line = line.split(';')
 
         # Separates input (X) and output (Y) data
-        X.append(data_line[:14])
+        X.append(data_line[:13])
         Y.append(data_line[-2:-1])
 
     # Converts data into a numpy array
@@ -357,14 +357,14 @@ def read_prediction_queue():
 
     for i in range(len(data_in_file)):
         if i > 0:
-            data_in_file[i][data_indexes.TEMPERATURE_INDEX.value]   = float(data_in_file[i][data_indexes.TEMPERATURE_INDEX.value])
-            data_in_file[i][data_indexes.HUMIDITY_INDEX.value]      = float(data_in_file[i][data_indexes.HUMIDITY_INDEX.value])
-            data_in_file[i][data_indexes.VISIBLE_LIGHT_INDEX.value] = int(data_in_file[i][data_indexes.VISIBLE_LIGHT_INDEX.value])
-            data_in_file[i][data_indexes.IR_LIGHT_INDEX.value]      = int(data_in_file[i][data_indexes.IR_LIGHT_INDEX.value])
-            data_in_file[i][data_indexes.UV_INDEX.value]            = float(data_in_file[i][data_indexes.UV_INDEX.value])
-            data_in_file[i][data_indexes.PUMP_ENABLED_INDEX.value]  = int(data_in_file[i][data_indexes.PUMP_ENABLED_INDEX.value])
-            data_in_file[i][data_indexes.LIGHT_ENABLED_INDEX.value] = int(data_in_file[i][data_indexes.LIGHT_ENABLED_INDEX.value])
-            data_in_file[i][data_indexes.VISIBLE_LIGHT_INDEX.value] = int(data_in_file[i][data_indexes.VISIBLE_LIGHT_INDEX.value])
+            data_in_file[i][data_indexes.TEMPERATURE_INDEX.value]   = float (data_in_file[i][data_indexes.TEMPERATURE_INDEX.value])
+            data_in_file[i][data_indexes.HUMIDITY_INDEX.value]      = float (data_in_file[i][data_indexes.HUMIDITY_INDEX.value])
+            data_in_file[i][data_indexes.VISIBLE_LIGHT_INDEX.value] = int   (data_in_file[i][data_indexes.VISIBLE_LIGHT_INDEX.value])
+            data_in_file[i][data_indexes.IR_LIGHT_INDEX.value]      = int   (data_in_file[i][data_indexes.IR_LIGHT_INDEX.value])
+            data_in_file[i][data_indexes.UV_INDEX.value]            = float (data_in_file[i][data_indexes.UV_INDEX.value])
+            data_in_file[i][data_indexes.PUMP_ENABLED_INDEX.value]  = int   (data_in_file[i][data_indexes.PUMP_ENABLED_INDEX.value])
+            data_in_file[i][data_indexes.LIGHT_ENABLED_INDEX.value] = int   (data_in_file[i][data_indexes.LIGHT_ENABLED_INDEX.value])
+            data_in_file[i][data_indexes.VISIBLE_LIGHT_INDEX.value] = int   (data_in_file[i][data_indexes.VISIBLE_LIGHT_INDEX.value])
         else:
             data_in_file[i][i] = int(data_in_file[i][i])
 
@@ -372,13 +372,66 @@ def read_prediction_queue():
 
 def compute_abstraction_for_prediction_queue(data_in_file):
     global last_data_counter
+    input_for_prediction = []
 
-    data_counter = data_in_file[0][0]
+    data_counter            = data_in_file[0][0]
+
+    initial_date            = data_in_file[1][0]
+    initial_hour            = data_in_file[1][1]
+
+    previous_date           = data_in_file[2][0]
+    previous_hour           = data_in_file[2][1]
+    previous_temperature    = data_in_file[2][2]
+    previous_humidity       = data_in_file[2][3]
+    previous_visible_light  = data_in_file[2][4]
+    previous_ir_light       = data_in_file[2][5]
+    previous_uv_index       = data_in_file[2][6]
+
+    current_date            = data_in_file[3][0]
+    current_hour            = data_in_file[3][1]
+    current_temperature     = data_in_file[3][2]
+    current_humidity        = data_in_file[3][3]
+    current_visible_light   = data_in_file[3][4]
+    current_ir_light        = data_in_file[3][5]
+    current_uv_index        = data_in_file[3][6]
+
     # Only go forward if new data is received
-    if (data_counter != last_data_counter):
-        last_data_counter = data_counter
+    if (data_counter > last_data_counter):
+        # Calculate elapsed time
+        initial_time = datetime.strptime(str(initial_date + ";" + initial_hour), time_format)
+        current_time = datetime.strptime(str(current_date + ";" + current_hour), time_format)
+        elapsed_time = (current_time - initial_time).total_seconds()
+        current_hour_in_seconds = get_seconds(current_hour)
 
-    print(data_in_file)
+        # Calculate time interval
+        previous_time = datetime.strptime(str(previous_date + ";" + previous_hour), time_format)
+        delta_time    = (current_time - previous_time).total_seconds()
+
+        # Calculate derivatives
+        d_temperature   =   (current_temperature    - previous_temperature)     /delta_time
+        d_humidity      =   (current_humidity       - previous_humidity)        /delta_time
+        d_visible_light =   (current_visible_light  - previous_visible_light)   /delta_time
+        d_ir_light      =   (current_ir_light       - previous_ir_light)        /delta_time
+        d_uv_index      =   (current_uv_index       - previous_uv_index)        /delta_time
+
+        # After processing data, assemble input packet
+        input_for_prediction = [
+            current_hour_in_seconds,
+            current_temperature,
+            current_humidity,
+            current_visible_light,
+            current_ir_light,
+            current_uv_index,
+            elapsed_time,
+            delta_time,
+            d_temperature,
+            d_humidity,
+            d_visible_light,
+            d_ir_light,
+            d_uv_index,
+        ]
+        last_data_counter = data_counter
+        print(input_for_prediction)
 
 # Main Code
 user_input = int(input("Select between: Train ML Model (0) | Run ML Model (1)\n"))
@@ -439,8 +492,9 @@ elif (user_input == 1):
     print(model.summary())
     probability_model = tf.keras.Sequential([model, tf.keras.layers.Softmax()])
 
-    prediction_queue = read_prediction_queue()
-    compute_abstraction_for_prediction_queue(prediction_queue)
+    while True:
+        prediction_queue = read_prediction_queue()
+        compute_abstraction_for_prediction_queue(prediction_queue)
 
     # X_valid, Y_valid    = read_validation_data()
     # # Gives an example for a prediction based on a single data
