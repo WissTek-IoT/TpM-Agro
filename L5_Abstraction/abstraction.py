@@ -374,66 +374,68 @@ def compute_abstraction_for_prediction_queue(data_in_file):
     global last_data_counter
     input_for_prediction = []
 
-    data_counter            = data_in_file[0][0]
+    # If list is not empty, compute data
+    if data_in_file:
+        data_counter            = data_in_file[0][0]
 
-    initial_date            = data_in_file[1][0]
-    initial_hour            = data_in_file[1][1]
+        initial_date            = data_in_file[1][0]
+        initial_hour            = data_in_file[1][1]
 
-    previous_date           = data_in_file[2][0]
-    previous_hour           = data_in_file[2][1]
-    previous_temperature    = data_in_file[2][2]
-    previous_humidity       = data_in_file[2][3]
-    previous_visible_light  = data_in_file[2][4]
-    previous_ir_light       = data_in_file[2][5]
-    previous_uv_index       = data_in_file[2][6]
+        previous_date           = data_in_file[2][0]
+        previous_hour           = data_in_file[2][1]
+        previous_temperature    = data_in_file[2][2]
+        previous_humidity       = data_in_file[2][3]
+        previous_visible_light  = data_in_file[2][4]
+        previous_ir_light       = data_in_file[2][5]
+        previous_uv_index       = data_in_file[2][6]
 
-    current_date            = data_in_file[3][0]
-    current_hour            = data_in_file[3][1]
-    current_temperature     = data_in_file[3][2]
-    current_humidity        = data_in_file[3][3]
-    current_visible_light   = data_in_file[3][4]
-    current_ir_light        = data_in_file[3][5]
-    current_uv_index        = data_in_file[3][6]
+        current_date            = data_in_file[3][0]
+        current_hour            = data_in_file[3][1]
+        current_temperature     = data_in_file[3][2]
+        current_humidity        = data_in_file[3][3]
+        current_visible_light   = data_in_file[3][4]
+        current_ir_light        = data_in_file[3][5]
+        current_uv_index        = data_in_file[3][6]
 
-    # Only go forward if new data is received
-    if (data_counter > last_data_counter):
-        # Calculate elapsed time
-        initial_time = datetime.strptime(str(initial_date + ";" + initial_hour), time_format)
-        current_time = datetime.strptime(str(current_date + ";" + current_hour), time_format)
-        elapsed_time = (current_time - initial_time).total_seconds()
-        current_hour_in_seconds = get_seconds(current_hour)
+        # Only go forward if new data is received
+        if (data_counter > last_data_counter):
+            # Calculate elapsed time
+            initial_time = datetime.strptime(str(initial_date + ";" + initial_hour), time_format)
+            current_time = datetime.strptime(str(current_date + ";" + current_hour), time_format)
+            elapsed_time = (current_time - initial_time).total_seconds()
+            current_hour_in_seconds = get_seconds(current_hour)
 
-        # Calculate time interval
-        previous_time = datetime.strptime(str(previous_date + ";" + previous_hour), time_format)
-        delta_time    = (current_time - previous_time).total_seconds()
+            # Calculate time interval
+            previous_time = datetime.strptime(str(previous_date + ";" + previous_hour), time_format)
+            delta_time    = (current_time - previous_time).total_seconds()
 
-        # Calculate derivatives
-        d_temperature   =   (current_temperature    - previous_temperature)     /delta_time
-        d_humidity      =   (current_humidity       - previous_humidity)        /delta_time
-        d_visible_light =   (current_visible_light  - previous_visible_light)   /delta_time
-        d_ir_light      =   (current_ir_light       - previous_ir_light)        /delta_time
-        d_uv_index      =   (current_uv_index       - previous_uv_index)        /delta_time
+            # Calculate derivatives
+            d_temperature   =   (current_temperature    - previous_temperature)     /delta_time
+            d_humidity      =   (current_humidity       - previous_humidity)        /delta_time
+            d_visible_light =   (current_visible_light  - previous_visible_light)   /delta_time
+            d_ir_light      =   (current_ir_light       - previous_ir_light)        /delta_time
+            d_uv_index      =   (current_uv_index       - previous_uv_index)        /delta_time
 
-        # After processing data, assemble input packet
-        input_for_prediction = [
-            current_hour_in_seconds,
-            current_temperature,
-            current_humidity,
-            current_visible_light,
-            current_ir_light,
-            current_uv_index,
-            elapsed_time,
-            delta_time,
-            d_temperature,
-            d_humidity,
-            d_visible_light,
-            d_ir_light,
-            d_uv_index,
-        ]
-        last_data_counter = data_counter
-        input_for_prediction = np.array(input_for_prediction).astype(float)
+            # After processing data, assemble input packet
+            input_for_prediction = [
+                current_hour_in_seconds,
+                current_temperature,
+                current_humidity,
+                current_visible_light,
+                current_ir_light,
+                current_uv_index,
+                elapsed_time,
+                delta_time,
+                d_temperature,
+                d_humidity,
+                d_visible_light,
+                d_ir_light,
+                d_uv_index,
+            ]
+            last_data_counter = data_counter
+            input_for_prediction = np.array(input_for_prediction).astype(float)
 
-        return True, input_for_prediction
+            return True, input_for_prediction
     
     return False, -1
 
@@ -514,28 +516,8 @@ elif (user_input == 1):
         valid_input, input_for_predicton    = compute_abstraction_for_prediction_queue(prediction_queue)
         if (valid_input):
             pump_signal, light_signal, confidence_level = predict_system_output(input_for_predicton, prediction_model)
-            print(pump_signal, light_signal, confidence_level)
-         
-    # X_valid, Y_valid    = read_validation_data()
-    # # Gives an example for a prediction based on a single data
-    # current_input = X_valid[55]
-    # current_input = (np.expand_dims(current_input, 0))
+            print(f"Pump: {pump_signal} | Light: {light_signal}\nConfidence Level: {confidence_level}%")
 
-    # current_prediction  = probability_model.predict(current_input)
-    # prediction_label    = np.argmax(current_prediction)
-
-    # # Extracts the predicted value from the predicted label
-    # predicted_pump_signal  = prediction_label & 0x01 
-    # predicted_light_signal = prediction_label >> 1
-
-    # print(("\n\nPredicted output: {}\n"+
-    #     "Real output: {}\n"+
-    #     "Pump Signal: {} | Light Signal: {}\n" +
-    #     "Level of Confidence: {}%").format(prediction_label,
-    #                                         Y_valid[55], 
-    #                                         predicted_pump_signal,
-    #                                         predicted_light_signal,
-    #                                         100*current_prediction[0][prediction_label]))
 else:
     print("Command not recognized.")
 
