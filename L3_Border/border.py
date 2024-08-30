@@ -73,7 +73,7 @@ RECEIVER_ID      = 11
 dl_packet = [0]*PACKET_BYTES
 ul_packet = [0]*PACKET_BYTES
 SERIAL_BAUD_RATE = 9600
-serial_port = "COM6"
+serial_port = "COM9"
 
 # Application Data
 temperature             = 0
