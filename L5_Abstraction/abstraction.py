@@ -24,23 +24,25 @@ class data_indexes(Enum):
 # Files
 application_data_file_location  = os.path.join(os.path.dirname(__file__), '../L4_Storage/application_data.txt')
 abstraction_data_file_location  = os.path.join(os.path.dirname(__file__), '../L4_Storage/abstraction_data.txt')
+commands_file_location          = os.path.join(os.path.dirname(__file__), '../L4_Storage/commands.txt')
 training_data_file_location     = os.path.join(os.path.dirname(__file__), '../L4_Storage/training_data.txt')
 validation_data_file_location   = os.path.join(os.path.dirname(__file__), '../L4_Storage/validation_data.txt')
 prediction_queue_file_location  = os.path.join(os.path.dirname(__file__), '../L4_Storage/prediction_queue.txt')
 model_file_location             = 'L4_Storage/model.keras'
 
-# Data variables
-date            = []
-hour            = []
-temperature     = []
-humidity        = []
-visible_light   = []
-ir_light        = []
-uv_index        = []
-control_mode    = []
-output_label    = []
-pump_enabled    = []
-light_enabled   = []
+# Application variables
+date                = []
+hour                = []
+temperature         = []
+humidity            = []
+visible_light       = []
+ir_light            = []
+uv_index            = []
+control_mode        = []
+output_label        = []
+pump_enabled        = []
+light_enabled       = []
+automatic_mode_type = 0
 
 # Abstraction variables
 hour_in_seconds   = []
@@ -71,6 +73,24 @@ def get_seconds(time_str):
     """Get seconds from time."""
     h, m, s = time_str.split(':')
     return int(h) * 3600 + int(m) * 60 + int(s)
+
+def read_automatic_mode_type():
+    commands = []
+
+    commands_file = open(commands_file_location, 'r')
+    # Stores all commands into an array
+    for line in commands_file:
+        # Separates data from colon
+        line = line.strip()
+        data_line = line.split(';')
+        data_line = data_line[1].strip()
+        commands.append(data_line)
+
+    commands_file.close()
+    if (len(commands) >= 5):
+        return int(commands[5])
+    
+    return 0
 
 def store_application_data(data_line):
     global date            
@@ -512,11 +532,13 @@ elif (user_input == 1):
     prediction_model = tf.keras.Sequential([model, tf.keras.layers.Softmax()])
 
     while True:
-        prediction_queue                    = read_prediction_queue()
-        valid_input, input_for_predicton    = compute_abstraction_for_prediction_queue(prediction_queue)
-        if (valid_input):
-            pump_signal, light_signal, confidence_level = predict_system_output(input_for_predicton, prediction_model)
-            print(f"Pump: {pump_signal} | Light: {light_signal}\nConfidence Level: {confidence_level}%")
+        automatic_mode_type = read_automatic_mode_type()
+        if (automatic_mode_type == 1):
+            prediction_queue                    = read_prediction_queue()
+            valid_input, input_for_predicton    = compute_abstraction_for_prediction_queue(prediction_queue)
+            if (valid_input):
+                pump_signal, light_signal, confidence_level = predict_system_output(input_for_predicton, prediction_model)
+                print(f"Pump: {pump_signal} | Light: {light_signal}\nConfidence Level: {confidence_level}%")
 
 else:
     print("Command not recognized.")
