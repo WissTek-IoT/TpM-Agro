@@ -92,6 +92,9 @@ first_dataset           = ""
 current_dataset         = ""
 previous_dataset        = ""
 
+# Abstraction Data
+confidence_level        = 0
+
 # Files
     # Creates the application data file if it already not exists
 application_data_file_location  = os.path.join(os.path.dirname(__file__), '../L4_Storage/application_data.txt')
@@ -149,16 +152,18 @@ def store_command_variables(commands):
     global automatic_mode_type
     global hour_to_turn_on_light
     global hour_to_turn_off_light
+    global confidence_level
 
     # Stores all commands into its variables
-    communication_interval      = int(commands[0])
-    pump_signal                 = int(commands[1])
-    light_signal                = int(commands[2])
-    pump_activation_interval    = int(commands[3])
-    pump_activation_duration    = int(commands[4])
-    automatic_mode_type         = int(commands[5])
-    hour_to_turn_on_light       = str(commands[6])
-    hour_to_turn_off_light      = str(commands[7])
+    communication_interval      = int   (commands[0])
+    pump_signal                 = int   (commands[1])
+    light_signal                = int   (commands[2])
+    pump_activation_interval    = int   (commands[3])
+    pump_activation_duration    = int   (commands[4])
+    automatic_mode_type         = int   (commands[5])
+    hour_to_turn_on_light       = str   (commands[6])
+    hour_to_turn_off_light      = str   (commands[7])
+    confidence_level            = float (commands[8])
 
     # If the system is in automatic periodic mode, controls light based on current hour
     if (control_mode == 1 and automatic_mode_type == 0):
@@ -284,20 +289,39 @@ def debug_application_data(debug):
     global light_enabled       
 
     if debug:     
-        print(("Temperature: {} °C\n" +
-                "Humidity: {}%\n" +
-                "Visible: {} lm | IR: {} lm | UV Index: {}\n" +
-                "Control Mode: {}\n" +
-                "Pump State: {} | Light State: {}\n").format(
-                    temperature,
-                    humidity,
-                    visible_light_intensity,
-                    ir_light_intensity,
-                    uv_index,
-                    control_mode,
-                    pump_enabled,
-                    light_enabled
-                ))
+        if (control_mode == 0 and automatic_mode_type == 1):
+            print("======RUNNING MACHINE LEARNING MODEL======")
+            print(("Temperature: {} °C\n" +
+            "Humidity: {}%\n" +
+            "Visible: {} lm | IR: {} lm | UV Index: {}\n" +
+            "Control Mode: {}\n" +
+            "Predicted Pump State: {} | Predicted Light State: {}\n" +
+            "Confidence Level: {}%\n").format(
+                temperature,
+                humidity,
+                visible_light_intensity,
+                ir_light_intensity,
+                uv_index,
+                control_mode,
+                pump_enabled,
+                light_enabled,
+                confidence_level
+            ))  
+        else:
+            print(("Temperature: {} °C\n" +
+                    "Humidity: {}%\n" +
+                    "Visible: {} lm | IR: {} lm | UV Index: {}\n" +
+                    "Control Mode: {}\n" +
+                    "Pump State: {} | Light State: {}\n").format(
+                        temperature,
+                        humidity,
+                        visible_light_intensity,
+                        ir_light_intensity,
+                        uv_index,
+                        control_mode,
+                        pump_enabled,
+                        light_enabled
+                    ))
 
 # Reads the application packet
 def read_application_packet():
