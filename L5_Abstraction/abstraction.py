@@ -472,6 +472,20 @@ def predict_system_output(input_for_prediction, model):
 
     return pump_signal, light_signal, confidence_level
 
+def send_predicted_signals(pump, light, confidence):
+    commands_file = open(commands_file_location, 'r')
+    commands = commands_file.readlines()
+    commands_file.close()
+
+    value_index = max(commands[1].find("0"), commands[1].find("1"))
+    commands[1] = commands[1][:value_index] + str(pump)         + '\n'
+    commands[2] = commands[2][:value_index] + str(light)        + '\n'
+    commands[8] = commands[8][:value_index] + str(confidence)   + '\n'
+
+    commands_file = open(commands_file_location, 'w+')
+    commands_file.writelines(commands)
+    commands_file.close()
+
 # Main Code
 user_input = int(input("Select between: Train ML Model (0) | Run ML Model (1)\n"))
 
@@ -538,6 +552,7 @@ elif (user_input == 1):
             valid_input, input_for_predicton    = compute_abstraction_for_prediction_queue(prediction_queue)
             if (valid_input):
                 pump_signal, light_signal, confidence_level = predict_system_output(input_for_predicton, prediction_model)
+                send_predicted_signals(pump_signal, light_signal, confidence_level)
                 print(f"Pump: {pump_signal} | Light: {light_signal}\nConfidence Level: {confidence_level}%")
 
 else:
