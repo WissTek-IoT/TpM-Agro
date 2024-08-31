@@ -59,12 +59,15 @@ last_data_counter = 0
 time_format = "%d-%m-%Y;%H:%M:%S"
 
 # Threshold for Outliers
-temperature_outlier     = 40.0
-humidity_outlier        = 100.1
+temperature_outlier     = 50.0
+humidity_outlier        = 150
 visible_light_outlier   = 20000
 ir_light_outlier        = 20000
 uv_index_outlier        = 15.0
 control_mode_outlier    = 2
+
+temperature_correction  = 0
+humidity_correction     = 0
 
 # Functions
 
@@ -108,8 +111,8 @@ def store_application_data(data_line):
     # Stores each data value into a temporary variable
     current_date = data_line[data_indexes.DATE_INDEX.value]
     current_hour = data_line[data_indexes.HOUR_INDEX.value]
-    current_temperature     = float   (data_line[data_indexes.TEMPERATURE_INDEX   .value])
-    current_humidity        = float   (data_line[data_indexes.HUMIDITY_INDEX      .value])
+    current_temperature     = float   (data_line[data_indexes.TEMPERATURE_INDEX   .value]) + temperature_correction
+    current_humidity        = float   (data_line[data_indexes.HUMIDITY_INDEX      .value]) + humidity_correction
     current_visible_light   = int     (data_line[data_indexes.VISIBLE_LIGHT_INDEX .value])
     current_ir_light        = int     (data_line[data_indexes.IR_LIGHT_INDEX      .value])
     current_uv_index        = float   (data_line[data_indexes.UV_INDEX            .value])
@@ -161,6 +164,8 @@ def read_application_data():
         data_line = line.split(';')
 
         store_application_data(data_line)
+
+    application_data_file.close()
 
 def compute_abstraction_data():
     global date            
@@ -516,14 +521,15 @@ if (user_input == 0):
     # Creates the Machine Learning Model
     model = tf.keras.Sequential([
         normalization,
-        tf.keras.layers.Dense(128, activation='relu'),
+        tf.keras.layers.Dense(16, activation='relu'),
+        tf.keras.layers.Dense(8, activation='linear'),
         tf.keras.layers.Dense(4)
     ])
     print("\nPerforming trainning...")
     model.compile(optimizer='adam',
                 loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
                 metrics=['accuracy'])
-    history = model.fit(X_train, Y_train, epochs=10)
+    history = model.fit(X_train, Y_train, epochs=4)
     print("Finished training.")
     print(model.summary())
 
