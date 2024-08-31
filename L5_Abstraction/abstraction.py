@@ -1,10 +1,13 @@
+# IMPORTS
 from datetime import datetime
 import os
 os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 from enum import Enum
 import numpy as np
 import tensorflow as tf
+import random
 
+# CLASSES
 class data_indexes(Enum):
     DATE_INDEX          = 0
     HOUR_INDEX          = 1
@@ -21,7 +24,7 @@ class data_indexes(Enum):
     PUMP_ENABLED_INDEX  = 8
     LIGHT_ENABLED_INDEX = 9
 
-# Files
+# FILES
 application_data_file_location  = os.path.join(os.path.dirname(__file__), '../L4_Storage/application_data.txt')
 abstraction_data_file_location  = os.path.join(os.path.dirname(__file__), '../L4_Storage/abstraction_data.txt')
 commands_file_location          = os.path.join(os.path.dirname(__file__), '../L4_Storage/commands.txt')
@@ -30,7 +33,8 @@ validation_data_file_location   = os.path.join(os.path.dirname(__file__), '../L4
 prediction_queue_file_location  = os.path.join(os.path.dirname(__file__), '../L4_Storage/prediction_queue.txt')
 model_file_location             = 'L4_Storage/model.keras'
 
-# Application variables
+# VARIABLES
+    # Application variables
 date                = []
 hour                = []
 temperature         = []
@@ -44,7 +48,7 @@ pump_enabled        = []
 light_enabled       = []
 automatic_mode_type = 0
 
-# Abstraction variables
+    # Abstraction variables
 hour_in_seconds   = []
 time_interval     = []
 elapsed_time      = []
@@ -55,10 +59,10 @@ d_ir_light        = []
 d_uv_index        = []
 last_data_counter = 0
 
-# Datetime variables
+    # Datetime variables
 time_format = "%d-%m-%Y;%H:%M:%S"
 
-# Threshold for Outliers
+    # Threshold for Outliers
 temperature_outlier     = 50.0
 humidity_outlier        = 150
 visible_light_outlier   = 20000
@@ -69,15 +73,18 @@ control_mode_outlier    = 2
 temperature_correction  = 0
 humidity_correction     = 0
 
-# Functions
+# FUNCTIONS
 
     # Data Processing Functions
 def get_seconds(time_str):
-    """Get seconds from time."""
+    """Gets seconds from time."""
     h, m, s = time_str.split(':')
     return int(h) * 3600 + int(m) * 60 + int(s)
 
 def read_automatic_mode_type():
+    """Reads commands file and extract automatic mode type.\n
+    Returns 0 if in periodic mode.\n
+    Returns 1 if in ML mode."""
     commands = []
 
     commands_file = open(commands_file_location, 'r')
@@ -343,9 +350,6 @@ def read_training_data():
     # Converts data into a numpy array
     X = np.array(X).astype(float)
     Y = np.array(Y).astype(int).flatten()
-
-    # print(( "Input Shape: {} \n"+
-    #         "Output Shape: {}").format(X.shape, Y.shape))
     
     return X, Y
 
@@ -515,21 +519,30 @@ if (user_input == 0):
     # Reads data
     X_train, Y_train = read_training_data()
     X_valid, Y_valid = read_validation_data()
+
     # Normalize input values X
     normalization = tf.keras.layers.Normalization(axis=-1)  # Creates a normalization instance
     normalization.adapt(X_train)                            # Learns mean and variance from input dataset X
+
+    # Set fixed seeds for model consistency
+    os.environ['PYTHONHASHSEED']=str(42)
+    tf.random.set_seed(42)
+    np.random.seed(42)
+    random.seed(42)
+
     # Creates the Machine Learning Model
     model = tf.keras.Sequential([
         normalization,
-        tf.keras.layers.Dense(16, activation='relu'),
-        tf.keras.layers.Dense(8, activation='linear'),
+        tf.keras.layers.Dense(12,  activation='relu'),
+        tf.keras.layers.Dense(6,   activation='relu'),
+        tf.keras.layers.Dense(3,   activation='relu'),
         tf.keras.layers.Dense(4)
     ])
     print("\nPerforming trainning...")
     model.compile(optimizer='adam',
                 loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
                 metrics=['accuracy'])
-    history = model.fit(X_train, Y_train, epochs=4)
+    history = model.fit(X_train, Y_train, epochs=3)
     print("Finished training.")
     print(model.summary())
 
@@ -541,6 +554,48 @@ if (user_input == 0):
     predictions_for_validation_set  = probability_model.predict(X_valid)
     print(f"Accuracy: {round(100*valid_accuracy,3)}%")
     print(f"Loss: {round(100*valid_loss,3)}%")
+
+    print("\nTesting for pump and light activation")
+    pump_active_in_validation           = 0
+    pump_active_in_validation_index     = []
+    light_active_in_validation          = 0
+    light_active_in_validation_index    =[]
+
+    for i in range(len(Y_valid)):
+        if Y_valid[i] == 1 or Y_valid[i] == 3:
+            pump_active_in_validation +=1
+            pump_active_in_validation_index.append(i)
+        if Y_valid[i] == 2 or Y_valid[i] == 3:
+            light_active_in_validation +=1
+            light_active_in_validation_index.append(i)
+
+    pump_active_in_prediction           = 0
+    pump_active_in_prediction_index     = []
+    light_active_in_prediction          = 0
+    light_active_in_prediction_index    = []
+
+    for i in range(len(predictions_for_validation_set)):
+        label = np.argmax(predictions_for_validation_set[i])
+        if label == 1 or label == 3:
+            pump_active_in_prediction +=1
+            pump_active_in_prediction_index.append(i)
+        if label == 2 or label == 3:
+            light_active_in_prediction +=1
+            light_active_in_prediction_index.append(i)
+
+    print("Number of times pump was active on validation set:", pump_active_in_validation)
+    print("Number of predicted pump activations using validation set as input for model:", pump_active_in_prediction)
+    print(f"Pump Accuracy: {round(100*pump_active_in_prediction/pump_active_in_validation, 2)}%")
+    # a = 0
+    # for i in pump_active_in_prediction_index:
+    #     if (np.argmax(predictions_for_validation_set[i]) == Y_valid[i]):
+    #         a += 1
+    # print("Matching pump activations: ", a)
+
+
+    print("\nNumber of times light was active on validation set:", light_active_in_validation)
+    print("Number of predicted light activations using validation set as input for model:",   light_active_in_prediction)
+    print(f"Light Accuracy: {round(100*light_active_in_prediction/  light_active_in_validation, 2)}%")
 
     model.save(model_file_location)
     print("\nModel was saved on L4_Storage")
