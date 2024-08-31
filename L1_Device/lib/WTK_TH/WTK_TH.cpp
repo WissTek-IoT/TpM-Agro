@@ -15,7 +15,7 @@ void read_temperature() {
   // Calculate temperature for each sensor
   for (uint8_t current_sensor = 0; current_sensor < NUMBER_OF_WTK_TH_SENSORS; current_sensor++) {
     for (uint8_t i = 0; i < WTK_TEMPERATURE_NUMBER_OF_SAMPLES_PER_READING; i++) {
-      // For more information on that equation, read temperature sensors' datasheet
+      // For more information on that equation, read MCP9700 (temperature sensor) datasheet
       average_temperature[current_sensor] += ((((analogRead(WTK_T_PINS[current_sensor])/1023.0) * WTK_TH_INPUT_VOLTAGE) - 0.5)/0.01);
       // delay(WTK_TEMPERATURE_READING_SAMPLE_TIME);
     } 
