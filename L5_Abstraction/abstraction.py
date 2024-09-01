@@ -63,12 +63,12 @@ last_data_counter = 0
 time_format = "%d-%m-%Y;%H:%M:%S"
 
     # Threshold for Outliers
-temperature_outlier     = 50.0
-humidity_outlier        = 150
+temperature_outlier     = 200.0
+humidity_outlier        = 200.0
 visible_light_outlier   = 20000
 ir_light_outlier        = 20000
-uv_index_outlier        = 15.0
-control_mode_outlier    = 2
+uv_index_outlier        = 100.0
+control_mode_outlier    = 3
 
 temperature_correction  = 0
 humidity_correction     = 0
@@ -533,7 +533,7 @@ if (user_input == 0):
     # Creates the Machine Learning Model
     model = tf.keras.Sequential([
         normalization,
-        tf.keras.layers.Dense(12,  activation='relu'),
+        # tf.keras.layers.Dense(13,  activation='relu'),
         tf.keras.layers.Dense(6,   activation='relu'),
         tf.keras.layers.Dense(3,   activation='relu'),
         tf.keras.layers.Dense(4)
@@ -542,7 +542,7 @@ if (user_input == 0):
     model.compile(optimizer='adam',
                 loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
                 metrics=['accuracy'])
-    history = model.fit(X_train, Y_train, epochs=3)
+    history = model.fit(X_train, Y_train, epochs=9)
     print("Finished training.")
     print(model.summary())
 
@@ -586,12 +586,11 @@ if (user_input == 0):
     print("Number of times pump was active on validation set:", pump_active_in_validation)
     print("Number of predicted pump activations using validation set as input for model:", pump_active_in_prediction)
     print(f"Pump Accuracy: {round(100*pump_active_in_prediction/pump_active_in_validation, 2)}%")
-    # a = 0
-    # for i in pump_active_in_prediction_index:
-    #     if (np.argmax(predictions_for_validation_set[i]) == Y_valid[i]):
-    #         a += 1
-    # print("Matching pump activations: ", a)
-
+    a = 0
+    for i in pump_active_in_prediction_index:
+        if (np.argmax(predictions_for_validation_set[i]) == Y_valid[i]):
+            a += 1
+    print("Matching pump activations: ", a)
 
     print("\nNumber of times light was active on validation set:", light_active_in_validation)
     print("Number of predicted light activations using validation set as input for model:",   light_active_in_prediction)
