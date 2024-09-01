@@ -533,7 +533,7 @@ if (user_input == 0):
     # Creates the Machine Learning Model
     model = tf.keras.Sequential([
         normalization,
-        # tf.keras.layers.Dense(13,  activation='relu'),
+        tf.keras.layers.Dense(12,  activation='relu'),
         tf.keras.layers.Dense(6,   activation='relu'),
         tf.keras.layers.Dense(3,   activation='relu'),
         tf.keras.layers.Dense(4)
@@ -542,7 +542,7 @@ if (user_input == 0):
     model.compile(optimizer='adam',
                 loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
                 metrics=['accuracy'])
-    history = model.fit(X_train, Y_train, epochs=9)
+    history = model.fit(X_train, Y_train, epochs=17)
     print("Finished training.")
     print(model.summary())
 
