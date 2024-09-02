@@ -14,6 +14,8 @@ from datetime   import datetime
 # FILES
 application_data_file_location  = os.path.join(os.path.dirname(__file__), '../L4_Storage/application_data.txt')
 abstraction_data_file_location  = os.path.join(os.path.dirname(__file__), '../L4_Storage/abstraction_data.txt')
+pump_model_file_location        = "L4_Storage/pump_model.keras"
+light_model_file_location       = "L4_Storage/light_model.keras"
 # commands_file_location          = os.path.join(os.path.dirname(__file__), '../L4_Storage/commands.txt')
 # training_data_file_location     = os.path.join(os.path.dirname(__file__), '../L4_Storage/training_data.txt')
 # validation_data_file_location   = os.path.join(os.path.dirname(__file__), '../L4_Storage/validation_data.txt')
@@ -305,7 +307,7 @@ def train_pump_model(training_data, validation_data):
 
     evaluate_model_precision_on_activating("pump", Y_pump_valid, predictions)
 
-    model.save("L4_Storage/pump_model.keras")
+    model.save(pump_model_file_location)
     print("\nModel was saved on L4_Storage as pump_model.keras")
     return pump_model
 
@@ -343,7 +345,7 @@ def train_light_model(training_data, validation_data):
 
     evaluate_model_precision_on_activating("light", Y_light_valid, predictions)
 
-    model.save("L4_Storage/light_model.keras")
+    model.save(light_model_file_location)
     print("\nModel was saved on L4_Storage as light_model.keras")
     return light_model
 
@@ -393,7 +395,22 @@ if (running_mode == 0):
         print("Command not recognized.")
 
 elif (running_mode == 1):
+    print("You chose to run the Machine Learning models")
+
+    pump_model = tf.keras.models.load_model(model_file_location)
     print("You chose to run the Machine Learning model below:")
+    print(model.summary())
+    prediction_model = tf.keras.Sequential([model, tf.keras.layers.Softmax()])
+
+    while True:
+        automatic_mode_type = read_automatic_mode_type()
+        if (automatic_mode_type == 1):
+            prediction_queue                    = read_prediction_queue()
+            valid_input, input_for_predicton    = compute_abstraction_for_prediction_queue(prediction_queue)
+            if (valid_input):
+                pump_signal, light_signal, confidence_level = predict_system_output(input_for_predicton, prediction_model)
+                send_predicted_signals(pump_signal, light_signal, confidence_level)
+                print(f"Pump: {pump_signal} | Light: {light_signal}\nConfidence Level: {confidence_level}%")
 
 else:
     print("Command not recognized.")
