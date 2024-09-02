@@ -14,12 +14,12 @@ from datetime   import datetime
 # FILES
 application_data_file_location  = os.path.join(os.path.dirname(__file__), '../L4_Storage/application_data.txt')
 abstraction_data_file_location  = os.path.join(os.path.dirname(__file__), '../L4_Storage/abstraction_data.txt')
+commands_file_location          = os.path.join(os.path.dirname(__file__), '../L4_Storage/commands.txt')
+prediction_queue_file_location  = os.path.join(os.path.dirname(__file__), '../L4_Storage/prediction_queue.txt')
 pump_model_file_location        = "L4_Storage/pump_model.keras"
 light_model_file_location       = "L4_Storage/light_model.keras"
-# commands_file_location          = os.path.join(os.path.dirname(__file__), '../L4_Storage/commands.txt')
 # training_data_file_location     = os.path.join(os.path.dirname(__file__), '../L4_Storage/training_data.txt')
 # validation_data_file_location   = os.path.join(os.path.dirname(__file__), '../L4_Storage/validation_data.txt')
-# prediction_queue_file_location  = os.path.join(os.path.dirname(__file__), '../L4_Storage/prediction_queue.txt')
 # model_file_location             = 'L4_Storage/model.keras'
 
 # CLASSES
@@ -59,17 +59,15 @@ uv_index_outlier        = 100.0
 # DATETIME FORMAT
 time_format = "%d-%m-%Y;%H:%M:%S"
 
-
-
 # FUNCTIONS
 def get_seconds(time_str):
     """Gets seconds from time."""
     h, m, s = time_str.split(':')
     return int(h) * 3600 + int(m) * 60 + int(s)
 
-def store_data_into_file(data, location):
+def store_data_into_file(data, file_location):
     """Stores given data into .txt file"""
-    file = open(location, 'w+')
+    file = open(file_location, 'w+')
     if (file.writable()):
         for i in range(len(data)):
             # Converts all data to string and then separate it by semicolons
@@ -88,66 +86,70 @@ def set_seed(seed):
     np.random.seed(seed)
     random.seed(seed)
 
-def read_application_data():
-    # List to store all application data
-    application_data        = []
+def read_data_file(file_location, is_prediction_queue=False):
+    data        = []
 
-    application_data_file = open(application_data_file_location, 'r', encoding='utf-8-sig')
-    for line in application_data_file:
+    data_file   = open(file_location, 'r', encoding='utf-8-sig')
+    for line in data_file:
         # Separates data from semicolon
         line = line.strip()
         data_line = line.split(';')
 
-        # Stores each data into its respective list
-        date            = data_line[date_index]
-        hour            = data_line[hour_index]
-        temperature     = float   (data_line[temperature_index])
-        humidity        = float   (data_line[humidity_index])
-        visible_light   = int     (data_line[visible_light_index])
-        ir_light        = int     (data_line[ir_light_index])
-        uv_index        = float   (data_line[uv_index_index])
-        control_mode    = int     (data_line[control_mode_index])
-        pump_enabled    = int     (data_line[pump_enabled_index])
-        light_enabled   = int     (data_line[light_enabled_index])
+        # The first value of prediction queue is not a data line, so we need to treat it differently
+        if (is_prediction_queue and len(data_line) == 1):
+            data.append(int(line))
+        else:
+            # Stores each data into its respective list
+            date            = data_line[date_index]
+            hour            = data_line[hour_index]
+            temperature     = float   (data_line[temperature_index])
+            humidity        = float   (data_line[humidity_index])
+            visible_light   = int     (data_line[visible_light_index])
+            ir_light        = int     (data_line[ir_light_index])
+            uv_index        = float   (data_line[uv_index_index])
+            control_mode    = int     (data_line[control_mode_index])
+            pump_enabled    = int     (data_line[pump_enabled_index])
+            light_enabled   = int     (data_line[light_enabled_index])
 
-        # If none of the values is an outlier, store the data line
-        if (
-            temperature     < temperature_outlier   and
-            humidity        < humidity_outlier      and
-            visible_light   < visible_light_outlier and
-            ir_light        < ir_light_outlier      and
-            uv_index        < uv_index_outlier      
-        ):
-            application_data.append([
-                date,
-                hour,
-                temperature,
-                humidity,
-                visible_light,
-                ir_light,
-                uv_index,
-                control_mode,
-                pump_enabled,
-                light_enabled
-            ])
-    application_data_file.close()
-    
-    return application_data
+            # If none of the values is an outlier, store the data line
+            if (
+                temperature     < temperature_outlier   and
+                humidity        < humidity_outlier      and
+                visible_light   < visible_light_outlier and
+                ir_light        < ir_light_outlier      and
+                uv_index        < uv_index_outlier      
+            ):
+                data.append([
+                    date,
+                    hour,
+                    temperature,
+                    humidity,
+                    visible_light,
+                    ir_light,
+                    uv_index,
+                    control_mode,
+                    pump_enabled,
+                    light_enabled
+                ])
+    data_file.close()
+    data = np.array(data)
+
+    return data
 
 def generate_abstraction_data(application_data):
     abstraction_data = []
 
     # Application Data
-    date            = [sublist[date_index           ]   for sublist in application_data] 
-    hour            = [sublist[hour_index           ]   for sublist in application_data] 
-    temperature     = [sublist[temperature_index    ]   for sublist in application_data] 
-    humidity        = [sublist[humidity_index       ]   for sublist in application_data] 
-    visible_light   = [sublist[visible_light_index  ]   for sublist in application_data] 
-    ir_light        = [sublist[ir_light_index       ]   for sublist in application_data] 
-    uv_index        = [sublist[uv_index_index       ]   for sublist in application_data] 
-    control_mode    = [sublist[control_mode_index   ]   for sublist in application_data] 
-    pump_enabled    = [sublist[pump_enabled_index   ]   for sublist in application_data] 
-    light_enabled   = [sublist[light_enabled_index  ]   for sublist in application_data] 
+    date            = application_data[:, date_index            ] 
+    hour            = application_data[:, hour_index            ] 
+    temperature     = application_data[:, temperature_index     ].astype(float) 
+    humidity        = application_data[:, humidity_index        ].astype(float) 
+    visible_light   = application_data[:, visible_light_index   ].astype(int) 
+    ir_light        = application_data[:, ir_light_index        ].astype(int)  
+    uv_index        = application_data[:, uv_index_index        ].astype(float) 
+    control_mode    = application_data[:, control_mode_index    ].astype(int)  
+    pump_enabled    = application_data[:, pump_enabled_index    ].astype(int)  
+    light_enabled   = application_data[:, light_enabled_index   ].astype(int)  
 
     # Abstraction Data
     hour_in_seconds     = []
@@ -349,6 +351,117 @@ def train_light_model(training_data, validation_data):
     print("\nModel was saved on L4_Storage as light_model.keras")
     return light_model
 
+def read_automatic_mode():
+    """Reads commands file and extract automatic mode type.\n
+    Returns 0 if in periodic mode.\n
+    Returns 1 if in ML mode."""
+    commands = []
+
+    commands_file = open(commands_file_location, 'r')
+    # Stores all commands into an array
+    for line in commands_file:
+        # Separates data from colon
+        line = line.strip()
+        data_line = line.split(';')
+        data_line = data_line[1].strip()
+        commands.append(data_line)
+
+    commands_file.close()
+    if (len(commands) >= 5):
+        return int(commands[5])
+    
+    return 0
+
+def compute_abstraction_for_prediction_queue(data_in_file):
+    global last_data_counter
+    input_for_prediction = []
+
+    # If list is not empty, compute data
+    if data_in_file:
+        data_counter            = data_in_file[0][0]
+
+        initial_date            = data_in_file[1][0]
+        initial_hour            = data_in_file[1][1]
+
+        previous_date           = data_in_file[2][0]
+        previous_hour           = data_in_file[2][1]
+        previous_temperature    = data_in_file[2][2]
+        previous_humidity       = data_in_file[2][3]
+        previous_visible_light  = data_in_file[2][4]
+        previous_ir_light       = data_in_file[2][5]
+        previous_uv_index       = data_in_file[2][6]
+
+        current_date            = data_in_file[3][0]
+        current_hour            = data_in_file[3][1]
+        current_temperature     = data_in_file[3][2]
+        current_humidity        = data_in_file[3][3]
+        current_visible_light   = data_in_file[3][4]
+        current_ir_light        = data_in_file[3][5]
+        current_uv_index        = data_in_file[3][6]
+
+        # Only go forward if new data is received
+        if (data_counter > last_data_counter):
+            # Calculate elapsed time
+            initial_time = datetime.strptime(str(initial_date + ";" + initial_hour), time_format)
+            current_time = datetime.strptime(str(current_date + ";" + current_hour), time_format)
+            elapsed_time = (current_time - initial_time).total_seconds()
+            current_hour_in_seconds = get_seconds(current_hour)
+
+            # Calculate time interval
+            previous_time = datetime.strptime(str(previous_date + ";" + previous_hour), time_format)
+            delta_time    = (current_time - previous_time).total_seconds()
+
+            # Calculate derivatives
+            d_temperature   =   (current_temperature    - previous_temperature)     /delta_time
+            d_humidity      =   (current_humidity       - previous_humidity)        /delta_time
+            d_visible_light =   (current_visible_light  - previous_visible_light)   /delta_time
+            d_ir_light      =   (current_ir_light       - previous_ir_light)        /delta_time
+            d_uv_index      =   (current_uv_index       - previous_uv_index)        /delta_time
+
+            # After processing data, assemble input packet
+            input_for_prediction = [
+                current_hour_in_seconds,
+                current_temperature,
+                current_humidity,
+                current_visible_light,
+                current_ir_light,
+                current_uv_index,
+                elapsed_time,
+                delta_time,
+                d_temperature,
+                d_humidity,
+                d_visible_light,
+                d_ir_light,
+                d_uv_index,
+            ]
+            last_data_counter = data_counter
+            input_for_prediction = np.array(input_for_prediction).astype(float)
+
+            return True, input_for_prediction
+    
+    return False, -1
+
+def predict_system_output(input_for_pump_prediction, 
+                          pump_model, 
+                          input_for_light_prediction,
+                          light_model):
+    pump_input  = np.expand_dims(input_for_pump_prediction, 0)
+    light_input = np.expand_dims(input_for_light_prediction, 0)
+
+    pump_prediction          = pump_model.predict(pump_input)
+    light_prediction         = light_model.predict(light_input)
+    pump_output_signal       = np.argmax(pump_prediction)
+    light_output_signal      = np.argmax(light_prediction)
+
+    # Extracts the predicted value from the predicted label
+    pump_confidence_level    = round(pump_prediction[0][pump_output_signal]*100, 2)
+    light_confidence_level   = round(light_prediction[0][light_output_signal]*100, 2)
+
+    return (pump_output_signal, 
+            pump_confidence_level, 
+            light_output_signal, 
+            light_confidence_level)
+
 # MAIN
 running_mode = int(input("Select between: Train ML Model (0) or Run ML Model (1)\n"))
 if (running_mode == 0):
@@ -358,7 +471,7 @@ if (running_mode == 0):
     # Processes application data and generate abstraction data
     print("\nYou chose to train the Machine Learning Model.")
     print("Processing abstraction data...")
-    application_data        = read_application_data()
+    application_data        = read_data_file(application_data_file_location)
     abstraction_data        = generate_abstraction_data(application_data)
     store_data_into_file(abstraction_data, abstraction_data_file_location)
 
@@ -397,20 +510,31 @@ if (running_mode == 0):
 elif (running_mode == 1):
     print("You chose to run the Machine Learning models")
 
-    pump_model = tf.keras.models.load_model(model_file_location)
-    print("You chose to run the Machine Learning model below:")
-    print(model.summary())
-    prediction_model = tf.keras.Sequential([model, tf.keras.layers.Softmax()])
+    # Loads pump model from .keras file
+    pump_model = tf.keras.Sequential([
+        tf.keras.models.load_model(pump_model_file_location),
+        tf.keras.layers.Softmax()
+    ])
+    print("Pump model summary:\n", pump_model.summary())
 
-    while True:
-        automatic_mode_type = read_automatic_mode_type()
-        if (automatic_mode_type == 1):
-            prediction_queue                    = read_prediction_queue()
-            valid_input, input_for_predicton    = compute_abstraction_for_prediction_queue(prediction_queue)
-            if (valid_input):
-                pump_signal, light_signal, confidence_level = predict_system_output(input_for_predicton, prediction_model)
-                send_predicted_signals(pump_signal, light_signal, confidence_level)
-                print(f"Pump: {pump_signal} | Light: {light_signal}\nConfidence Level: {confidence_level}%")
+    # Loads light model from .keras file
+    light_model = tf.keras.Sequential([
+        tf.keras.models.load_model(light_model_file_location),
+        tf.keras.layers.Softmax()
+    ])
+    print("Light model summary:\n", light_model.summary())
+    prediction_queue                    = read_data_file(prediction_queue_file_location, is_prediction_queue=True)
+    print(prediction_queue)
+
+    # while True:
+    #     automatic_mode = read_automatic_mode()
+    #     if (automatic_mode == 1):
+    #         prediction_queue                    = read_data_file(prediction_queue_file_location)
+    #         valid_input, input_for_predicton    = compute_abstraction_for_prediction_queue(prediction_queue)
+            # if (valid_input):
+            #     pump_signal, pump_confidence_level, light_signal, light_confidence_level = predict_system_output(input_for_predicton, prediction_model)
+            #     send_predicted_signals(pump_signal, light_signal, confidence_level)
+            #     print(f"Pump: {pump_signal} | Light: {light_signal}\nConfidence Level: {confidence_level}%")
 
 else:
     print("Command not recognized.")
