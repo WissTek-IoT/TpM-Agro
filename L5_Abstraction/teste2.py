@@ -322,7 +322,7 @@ def train_light_model(training_data, validation_data):
     # Creates a normalization layer
     normalization = tf.keras.layers.Normalization(axis=-1) 
     normalization.adapt(X_light_train)
-
+    
     # Creates the machine learning model
     model = tf.keras.Sequential([
         normalization,
@@ -366,8 +366,8 @@ if (running_mode == 0):
     validation_data_length  = total_data_length - training_data_length
 
     # Generates training and validation data
-    training_data           = abstraction_data[:training_data_length]
-    validation_data         = abstraction_data[training_data_length:]
+    training_data           = abstraction_data[:training_data_length] # Extracts abstraction data from first value to training_data_length_line
+    validation_data         = abstraction_data[training_data_length:] # Extracts abstraction data from training_data_lenght_line to last value
 
     # Prints out information on abstraction data
     print("Abstracion data processed.\n")
@@ -388,7 +388,6 @@ if (running_mode == 0):
         print("'both' isn't working as expected. Please train each model separately.")
         # print("You selected to train both pump and light models.\n")
         # train_pump_model(training_data, validation_data)
-        # tf.keras.backend.clear_session()
         # train_light_model(training_data, validation_data)
     else:
         print("Command not recognized.")
