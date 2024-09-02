@@ -132,8 +132,14 @@ def read_data_file(file_location, is_prediction_queue=False):
                     light_enabled
                 ])
     data_file.close()
-    data = np.array(data)
 
+    # Separates data counter from actual data
+    if (is_prediction_queue):
+        data_counter = data[0]
+        data = np.array(data[1:])
+        return data, data_counter
+    
+    data = np.array(data)
     return data
 
 def generate_abstraction_data(application_data):
@@ -523,8 +529,9 @@ elif (running_mode == 1):
         tf.keras.layers.Softmax()
     ])
     print("Light model summary:\n", light_model.summary())
-    prediction_queue                    = read_data_file(prediction_queue_file_location, is_prediction_queue=True)
-    print(prediction_queue)
+
+    prediction_queue, data_counter = read_data_file(prediction_queue_file_location, is_prediction_queue=True)
+    # Pending: Update compute_abstraction_for_prediction_queue
 
     # while True:
     #     automatic_mode = read_automatic_mode()

@@ -8,5 +8,8 @@ a = np.array(a)
 
 b = a[:, 14]
 c = a[:, [0,6]]
+
+j = [1,2,3]
 print(b)
 print(c)
+print(j[1:])
