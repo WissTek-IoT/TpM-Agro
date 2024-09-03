@@ -142,7 +142,7 @@ def read_data_file(file_location, is_prediction_queue=False):
     data = np.array(data)
     return data
 
-def generate_abstraction_data(application_data):
+def generate_abstraction_data(application_data, is_prediction_queue=False):
     abstraction_data = []
 
     # Application Data
@@ -216,6 +216,8 @@ def generate_abstraction_data(application_data):
         ])
     abstraction_data = np.array(abstraction_data).astype(float)
 
+    if (is_prediction_queue): 
+        return abstraction_data[2]
     return abstraction_data
 
 def train_generic_model(model,
@@ -531,7 +533,7 @@ elif (running_mode == 1):
     print("Light model summary:\n", light_model.summary())
 
     prediction_queue, data_counter = read_data_file(prediction_queue_file_location, is_prediction_queue=True)
-    # Pending: Update compute_abstraction_for_prediction_queue
+    teste = generate_abstraction_data(prediction_queue, is_prediction_queue=True)
 
     # while True:
     #     automatic_mode = read_automatic_mode()
