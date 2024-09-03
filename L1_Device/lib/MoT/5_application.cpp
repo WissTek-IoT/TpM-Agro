@@ -141,8 +141,8 @@ void run_application() {
     current_uv_index                = read_UV_index();
 
     // constrain all variables so they don't cause packet errors
-    current_temperature             = constrain(current_temperature,                0, UINT16_MAX);
-    current_humidity                = constrain(current_humidity,                   0, UINT16_MAX);
+    current_temperature             = constrain(current_temperature,                0, MAX_TEMPERATURE);
+    current_humidity                = constrain(current_humidity,                   0, MAX_HUMIDITY);
     current_visible_light_intensity = constrain(current_visible_light_intensity,    0, UINT16_MAX);
     current_ir_light_intensity      = constrain(current_ir_light_intensity,         0, UINT16_MAX);
     current_uv_index                = constrain(current_uv_index,                   0, 20);
