@@ -380,79 +380,11 @@ def read_automatic_mode():
     
     return 0
 
-def compute_abstraction_for_prediction_queue(data_in_file):
-    global last_data_counter
-    input_for_prediction = []
-
-    # If list is not empty, compute data
-    if data_in_file:
-        data_counter            = data_in_file[0][0]
-
-        initial_date            = data_in_file[1][0]
-        initial_hour            = data_in_file[1][1]
-
-        previous_date           = data_in_file[2][0]
-        previous_hour           = data_in_file[2][1]
-        previous_temperature    = data_in_file[2][2]
-        previous_humidity       = data_in_file[2][3]
-        previous_visible_light  = data_in_file[2][4]
-        previous_ir_light       = data_in_file[2][5]
-        previous_uv_index       = data_in_file[2][6]
-
-        current_date            = data_in_file[3][0]
-        current_hour            = data_in_file[3][1]
-        current_temperature     = data_in_file[3][2]
-        current_humidity        = data_in_file[3][3]
-        current_visible_light   = data_in_file[3][4]
-        current_ir_light        = data_in_file[3][5]
-        current_uv_index        = data_in_file[3][6]
-
-        # Only go forward if new data is received
-        if (data_counter > last_data_counter):
-            # Calculate elapsed time
-            initial_time = datetime.strptime(str(initial_date + ";" + initial_hour), time_format)
-            current_time = datetime.strptime(str(current_date + ";" + current_hour), time_format)
-            elapsed_time = (current_time - initial_time).total_seconds()
-            current_hour_in_seconds = get_seconds(current_hour)
-
-            # Calculate time interval
-            previous_time = datetime.strptime(str(previous_date + ";" + previous_hour), time_format)
-            delta_time    = (current_time - previous_time).total_seconds()
-
-            # Calculate derivatives
-            d_temperature   =   (current_temperature    - previous_temperature)     /delta_time
-            d_humidity      =   (current_humidity       - previous_humidity)        /delta_time
-            d_visible_light =   (current_visible_light  - previous_visible_light)   /delta_time
-            d_ir_light      =   (current_ir_light       - previous_ir_light)        /delta_time
-            d_uv_index      =   (current_uv_index       - previous_uv_index)        /delta_time
-
-            # After processing data, assemble input packet
-            input_for_prediction = [
-                current_hour_in_seconds,
-                current_temperature,
-                current_humidity,
-                current_visible_light,
-                current_ir_light,
-                current_uv_index,
-                elapsed_time,
-                delta_time,
-                d_temperature,
-                d_humidity,
-                d_visible_light,
-                d_ir_light,
-                d_uv_index,
-            ]
-            last_data_counter = data_counter
-            input_for_prediction = np.array(input_for_prediction).astype(float)
-
-            return True, input_for_prediction
-    
-    return False, -1
-
-def predict_system_output(input_for_pump_prediction, 
-                          pump_model, 
-                          input_for_light_prediction,
-                          light_model):
+def predict_system_output(pump_model, 
+                          input_for_pump_prediction, 
+                          light_model,
+                          input_for_light_prediction
+                          ):
     pump_input  = np.expand_dims(input_for_pump_prediction, 0)
     light_input = np.expand_dims(input_for_light_prediction, 0)
 
@@ -469,6 +401,21 @@ def predict_system_output(input_for_pump_prediction,
             pump_confidence_level, 
             light_output_signal, 
             light_confidence_level)
+
+def send_predicted_signals(pump, pump_confidence, light, light_confidence):
+    commands_file = open(commands_file_location, 'r')
+    commands = commands_file.readlines()
+    commands_file.close()
+
+    value_index = max(commands[1].find("0"), commands[1].find("1"))
+    commands[1] = commands[1][:value_index] + str(pump)         + '\n'
+    commands[2] = commands[2][:value_index] + str(light)        + '\n'
+    commands[8] = commands[8][:value_index] + str(pump_confidence)   + '\n'
+    commands[9] = commands[9][:value_index] + str(light_confidence)   + '\n'
+
+    commands_file = open(commands_file_location, 'w+')
+    commands_file.writelines(commands)
+    commands_file.close()
 
 # MAIN
 running_mode = int(input("Select between: Train ML Model (0) or Run ML Model (1)\n"))
@@ -532,18 +479,27 @@ elif (running_mode == 1):
     ])
     print("Light model summary:\n", light_model.summary())
 
-    prediction_queue, data_counter = read_data_file(prediction_queue_file_location, is_prediction_queue=True)
-    teste = generate_abstraction_data(prediction_queue, is_prediction_queue=True)
+    last_data_counter = 0
+    while True:
+        # If the mode is set to automatic machine learning, controls the system based on models
+        automatic_mode = read_automatic_mode()
+        if (automatic_mode == 1):
+            prediction_queue, data_counter  = read_data_file(prediction_queue_file_location, is_prediction_queue=True)
+            # If a new data has arrived, compute its prediction
+            if (data_counter > last_data_counter):
+                prediction_input        = generate_abstraction_data(prediction_queue, is_prediction_queue=True)
+                pump_prediction_input   = prediction_input[:13]
+                light_prediction_input  = prediction_input[[0, 6]]
 
-    # while True:
-    #     automatic_mode = read_automatic_mode()
-    #     if (automatic_mode == 1):
-    #         prediction_queue                    = read_data_file(prediction_queue_file_location)
-    #         valid_input, input_for_predicton    = compute_abstraction_for_prediction_queue(prediction_queue)
-            # if (valid_input):
-            #     pump_signal, pump_confidence_level, light_signal, light_confidence_level = predict_system_output(input_for_predicton, prediction_model)
-            #     send_predicted_signals(pump_signal, light_signal, confidence_level)
-            #     print(f"Pump: {pump_signal} | Light: {light_signal}\nConfidence Level: {confidence_level}%")
+                (pump_signal, pump_confidence_level, light_signal, light_confidence_level) = predict_system_output(
+                    pump_model,
+                    pump_prediction_input,
+                    light_model,
+                    light_prediction_input
+                )
+                send_predicted_signals(pump_signal, pump_confidence_level, light_signal, light_confidence_level)
+                print(f"Pump: {pump_signal} | Confidence Level: {pump_confidence_level}% \nLight: {light_signal} | Confidence Level: {light_confidence_level}%")
+                last_data_counter = data_counter
 
 else:
     print("Command not recognized.")

@@ -6,4 +6,5 @@ Automatic Mode Pump Activation Duration;            30
 Automatic Mode (0- Periodic | 1- ML);               1
 Hour to Turn On Light;                              06:00:00
 Hour to Turn Off Light;                             18:00:00
-Confidence Level;                                   72.54
+Pump Confidence Level;                              97.44
+Light Confidence Level;                             99.85
