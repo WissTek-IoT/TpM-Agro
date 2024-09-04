@@ -24,20 +24,22 @@ light_model_file_location       = "L4_Storage/light_model.keras"
 
 # CLASSES
 class data_indexes(Enum):
-    DATE_INDEX          = 0
-    HOUR_INDEX          = 1
+    DATE_INDEX              = 0
+    HOUR_INDEX              = 1
 
-    TEMPERATURE_INDEX   = 2
-    HUMIDITY_INDEX      = 3
+    TEMPERATURE_INDEX       = 2
+    HUMIDITY_INDEX          = 3
 
-    VISIBLE_LIGHT_INDEX = 4
-    IR_LIGHT_INDEX      = 5
-    UV_INDEX            = 6
+    VISIBLE_LIGHT_INDEX     = 4
+    IR_LIGHT_INDEX          = 5
+    UV_INDEX                = 6
 
-    CONTROL_MODE_INDEX  = 7
+    CONTROL_MODE_INDEX      = 7
 
-    PUMP_ENABLED_INDEX  = 8
-    LIGHT_ENABLED_INDEX = 9
+    PUMP_ENABLED_INDEX      = 8
+    PUMP_WAITING_INDEX      = 9
+    PUMP_ACTIVATING_INDEX   = 10
+    LIGHT_ENABLED_INDEX     = 11
 date_index              = data_indexes.DATE_INDEX.value
 hour_index              = data_indexes.HOUR_INDEX.value
 temperature_index       = data_indexes.TEMPERATURE_INDEX.value
@@ -47,6 +49,8 @@ ir_light_index          = data_indexes.IR_LIGHT_INDEX.value
 uv_index_index          = data_indexes.UV_INDEX.value
 control_mode_index      = data_indexes.CONTROL_MODE_INDEX.value
 pump_enabled_index      = data_indexes.PUMP_ENABLED_INDEX.value
+pump_waiting_index      = data_indexes.PUMP_WAITING_INDEX.value
+pump_activating_index   = data_indexes.PUMP_ACTIVATING_INDEX.value
 light_enabled_index     = data_indexes.LIGHT_ENABLED_INDEX.value
 
 # THRESHOLD FOR OUTLIERS
