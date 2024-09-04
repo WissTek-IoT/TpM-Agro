@@ -389,26 +389,36 @@ def read_automatic_mode():
     
     return 0
 
-def predict_system_output(pump_model, 
-                          input_for_pump_prediction, 
+def predict_system_output(pump_waiting_model, 
+                          input_for_pump_waiting_prediction, 
+                          pump_activating_model,
+                          input_for_pump_activating_prediction,
                           light_model,
                           input_for_light_prediction
                           ):
-    pump_input  = np.expand_dims(input_for_pump_prediction, 0)
-    light_input = np.expand_dims(input_for_light_prediction, 0)
+    pump_waiting_input      = np.expand_dims(input_for_pump_waiting_prediction, 0)
+    pump_activating_input   = np.expand_dims(input_for_pump_activating_prediction, 0)
+    light_input             = np.expand_dims(input_for_light_prediction, 0)
 
-    pump_prediction          = pump_model.predict(pump_input)
-    light_prediction         = light_model.predict(light_input)
-    pump_output_signal       = np.argmax(pump_prediction)
-    light_output_signal      = np.argmax(light_prediction)
+    pump_activating_prediction  = pump_model.predict(pump_activating_input)
+    pump_waiting_prediction     = pump_model.predict(pump_waiting_input)
+    light_prediction            = light_model.predict(light_input)
+
+    pump_activating_output_signal   = np.argmax(pump_activating_prediction)
+    pump_waiting_output_signal      = np.argmax(pump_waiting_prediction)
+    light_output_signal             = np.argmax(light_prediction)
 
     # Extracts the predicted value from the predicted label
-    pump_confidence_level    = round(pump_prediction[0][pump_output_signal]*100, 2)
-    light_confidence_level   = round(light_prediction[0][light_output_signal]*100, 2)
+    # I need to search how to get confidence level for those
+    pump_waiting_confidence_level    = -1
+    pump_activating_confidence_level = -1
+    light_confidence_level           = round(light_prediction[0][light_output_signal]*100, 2)
 
-    return (pump_output_signal, 
-            pump_confidence_level, 
+    return (pump_waiting_output_signal, 
+            pump_activating_output_signal,
             light_output_signal, 
+            pump_waiting_confidence_level, 
+            pump_activating_confidence_level, 
             light_confidence_level)
 
 def send_predicted_signals(pump, pump_confidence, light, light_confidence):
