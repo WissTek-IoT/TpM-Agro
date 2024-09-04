@@ -421,16 +421,22 @@ def predict_system_output(pump_waiting_model,
             pump_activating_confidence_level, 
             light_confidence_level)
 
-def send_predicted_signals(pump, pump_confidence, light, light_confidence):
+def send_predicted_signals(pump_waiting_time, 
+                           pump_activating_time, 
+                           light, 
+                           pump_waiting_confidence,
+                           pump_activating_confidence,
+                           light_confidence):
     commands_file = open(commands_file_location, 'r')
     commands = commands_file.readlines()
     commands_file.close()
 
     value_index = max(commands[1].find("0"), commands[1].find("1"))
-    commands[1] = commands[1][:value_index] + str(pump)         + '\n'
-    commands[2] = commands[2][:value_index] + str(light)        + '\n'
-    commands[8] = commands[8][:value_index] + str(pump_confidence)   + '\n'
-    commands[9] = commands[9][:value_index] + str(light_confidence)   + '\n'
+    commands[3] = commands[3][:value_index] + str(pump_waiting_time)            + '\n'
+    commands[4] = commands[4][:value_index] + str(pump_activating_time)         + '\n'
+    commands[8] = commands[8][:value_index] + str(pump_waiting_confidence)      + '\n'
+    commands[9] = commands[9][:value_index] + str(pump_activating_confidence)   + '\n'
+    commands[10] = commands[10][:value_index] + str(light_confidence)             + '\n'
 
     commands_file = open(commands_file_location, 'w+')
     commands_file.writelines(commands)
