@@ -160,6 +160,8 @@ def generate_abstraction_data(application_data, is_prediction_queue=False):
     uv_index        = application_data[:, uv_index_index        ].astype(float) 
     control_mode    = application_data[:, control_mode_index    ].astype(int)  
     pump_enabled    = application_data[:, pump_enabled_index    ].astype(int)  
+    pump_waiting    = application_data[:, pump_waiting_index    ].astype(int)  
+    pump_activating = application_data[:, pump_activating_index ].astype(int)  
     light_enabled   = application_data[:, light_enabled_index   ].astype(int)  
 
     # Abstraction Data
@@ -209,6 +211,8 @@ def generate_abstraction_data(application_data, is_prediction_queue=False):
             visible_light[i],
             ir_light[i],
             uv_index[i],
+            pump_waiting[i],
+            pump_activating[i],
             elapsed_time[i],
             time_interval[i],
             d_temperature[i],
@@ -291,12 +295,12 @@ def evaluate_model_precision_on_activating(output_type, validation_output, predi
 def train_pump_model(training_data, validation_data):
     print("Training pump model.")
     # Reads training data
-    X_pump_train = training_data[:, 0:13]
-    Y_pump_train = training_data[:, 13]
+    X_pump_train = training_data[:, 0:15]
+    Y_pump_train = training_data[:, 15]
 
     # Reads validation data
-    X_pump_valid = validation_data[:, 0:13]
-    Y_pump_valid = validation_data[:, 13]
+    X_pump_valid = validation_data[:, 0:15]
+    Y_pump_valid = validation_data[:, 15]
 
     # Creates a normalization layer
     normalization = tf.keras.layers.Normalization(axis=-1) 
@@ -329,12 +333,12 @@ def train_pump_model(training_data, validation_data):
 def train_light_model(training_data, validation_data):
     print("Training light model.")
     # Reads training data
-    X_light_train = training_data[:, [0, 6]]
-    Y_light_train = training_data[:, 14]
+    X_light_train = training_data[:, [0, 8]]
+    Y_light_train = training_data[:, 16]
 
     # Reads validation data
-    X_light_valid = validation_data[:, [0, 6]]
-    Y_light_valid = validation_data[:, 14]
+    X_light_valid = validation_data[:, [0, 8]]
+    Y_light_valid = validation_data[:, 16]
 
     # Creates a normalization layer
     normalization = tf.keras.layers.Normalization(axis=-1) 
