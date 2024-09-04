@@ -113,6 +113,8 @@ def read_data_file(file_location, is_prediction_queue=False):
             uv_index        = float   (data_line[uv_index_index])
             control_mode    = int     (data_line[control_mode_index])
             pump_enabled    = int     (data_line[pump_enabled_index])
+            pump_waiting    = int     (data_line[pump_waiting_index])
+            pump_activating = int     (data_line[pump_activating_index])
             light_enabled   = int     (data_line[light_enabled_index])
 
             # If none of the values is an outlier, store the data line
@@ -133,6 +135,8 @@ def read_data_file(file_location, is_prediction_queue=False):
                     uv_index,
                     control_mode,
                     pump_enabled,
+                    pump_waiting,
+                    pump_activating,
                     light_enabled
                 ])
     data_file.close()
@@ -455,20 +459,21 @@ if (running_mode == 0):
     abstraction_data        = generate_abstraction_data(application_data)
     store_data_into_file(abstraction_data, abstraction_data_file_location)
 
-    # Processes data length and splits abstraction data into training and validation data
-    total_data_length       = len(abstraction_data)
-    training_data_length    = round(0.7*total_data_length)
-    validation_data_length  = total_data_length - training_data_length
+    # Processes data length and splits abstraction data into training, validation and testing data
+    split1 = round(0.7*len(abstraction_data))
+    split2 = round((len(abstraction_data) - split1)/2) + split1
 
     # Generates training and validation data
-    training_data           = abstraction_data[:training_data_length] # Extracts abstraction data from first value to training_data_length_line
-    validation_data         = abstraction_data[training_data_length:] # Extracts abstraction data from training_data_lenght_line to last value
+    training_data   = abstraction_data[:split1]         # Extracts abstraction data from first value to split1
+    validation_data = abstraction_data[split1:split2]   # Extracts abstraction data from split1 to split2
+    testing_data    = abstraction_data[split2:]         # Extracts abstraction data from split2 to last value
 
     # Prints out information on abstraction data
     print("Abstracion data processed.\n")
-    print(f"Total data: {total_data_length} lines.")
-    print(f"70% of total data ({training_data_length} lines) will be used to train the model.")
-    print(f"30% of total data ({validation_data_length} lines) will be used to validate the model.\n")
+    print(f"Total data: {len(abstraction_data)} lines.")
+    print(f"70% of total data ({len(training_data)} lines) will be used to train the model.")
+    print(f"15% of total data ({len(validation_data)} lines) will be used to validate the model during training.\n")
+    print(f"15% of total data ({len(testing_data)} lines) will be used to test the model accuracy.\n")
 
     model_to_train = input("Select which model to train: 'pump', 'light', or 'both'\n")
     if (model_to_train == "pump"):
@@ -513,17 +518,17 @@ elif (running_mode == 1):
             # If a new data has arrived, compute its prediction
             if (data_counter > last_data_counter and data_counter != -1):
                 prediction_input        = generate_abstraction_data(prediction_queue, is_prediction_queue=True)
-                pump_prediction_input   = prediction_input[:13]
-                light_prediction_input  = prediction_input[[0, 6]]
+                pump_prediction_input   = prediction_input[:15]
+                light_prediction_input  = prediction_input[[0, 8]]
 
-                (pump_signal, pump_confidence_level, light_signal, light_confidence_level) = predict_system_output(
-                    pump_model,
-                    pump_prediction_input,
-                    light_model,
-                    light_prediction_input
-                )
-                send_predicted_signals(pump_signal, pump_confidence_level, light_signal, light_confidence_level)
-                print(f"Pump: {pump_signal} | Confidence Level: {pump_confidence_level}% \nLight: {light_signal} | Confidence Level: {light_confidence_level}%")
+                # (pump_signal, pump_confidence_level, light_signal, light_confidence_level) = predict_system_output(
+                #     pump_model,
+                #     pump_prediction_input,
+                #     light_model,
+                #     light_prediction_input
+                # )
+                # send_predicted_signals(pump_signal, pump_confidence_level, light_signal, light_confidence_level)
+                # print(f"Pump: {pump_signal} | Confidence Level: {pump_confidence_level}% \nLight: {light_signal} | Confidence Level: {light_confidence_level}%")
                 last_data_counter = data_counter
 
 else:
