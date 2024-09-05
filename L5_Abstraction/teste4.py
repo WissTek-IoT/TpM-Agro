@@ -19,9 +19,6 @@ prediction_queue_file_location      = os.path.join(os.path.dirname(__file__), '.
 pump_waiting_model_file_location    = "L4_Storage/pump_waiting_model.keras"
 pump_activating_model_file_location = "L4_Storage/pump_ativating_model.keras"
 light_model_file_location           = "L4_Storage/light_model.keras"
-# training_data_file_location     = os.path.join(os.path.dirname(__file__), '../L4_Storage/training_data.txt')
-# validation_data_file_location   = os.path.join(os.path.dirname(__file__), '../L4_Storage/validation_data.txt')
-# model_file_location             = 'L4_Storage/model.keras'
 
 # CLASSES
 class data_indexes(Enum):
@@ -225,7 +222,7 @@ def generate_abstraction_data(application_data, is_prediction_queue=False):
             d_uv_index[i],
             pump_enabled[i],
             pump_waiting[i]/100.0,
-            pump_activating[i],
+            pump_activating[i]/10.0,
             light_enabled[i]
         ])
     abstraction_data = np.array(abstraction_data).astype(float)
@@ -246,7 +243,7 @@ def train_regression_model(model,
     model.compile(
         optimizer='adam',
         loss=tf.keras.losses.MeanSquaredError(),
-        metrics=['mae', 'mse']
+        metrics=['mae', 'mse', 'mean_absolute_percentage_error']
     )
     model.fit(
         training_input,
@@ -288,17 +285,17 @@ def train_classification_model(model,
     print(model.summary())
 
     print("\nModel metrics:")
-    valid_loss, valid_accuracy = model.evaluate(validation_input,  validation_output, verbose=0)
+    valid_loss, valid_accuracy = model.evaluate(test_input,  test_output, verbose=0)
 
     # Computes predicted output for each validation set's input
-    probability_model               = tf.keras.Sequential([model, tf.keras.layers.Softmax()])
-    predictions_for_validation_set  = probability_model.predict(validation_input)
+    probability_model            = tf.keras.Sequential([model, tf.keras.layers.Softmax()])
+    predictions_for_testing_set  = probability_model.predict(test_input)
 
     # Prints Accuracy and Loss
     print(f"Accuracy: {round(100*valid_accuracy,3)}%")
     print(f"Loss: {round(100*valid_loss,3)}%")
 
-    return probability_model, predictions_for_validation_set
+    return probability_model, predictions_for_testing_set
 
 def evaluate_model_precision_on_activating(output_type, validation_output, predicted_output):
     """Gives metrics on the precision of the given model to activate given actuator."""
@@ -397,9 +394,9 @@ def train_pump_activating_model(training_data, validation_data, testing_data):
     # Creates the machine learning model
     model = tf.keras.Sequential([
         normalization,
-        tf.keras.layers.Dense(27, activation='relu'),
-        tf.keras.layers.Dense(16, activation='relu'),
-        tf.keras.layers.Dense(6,  activation='relu'),
+        tf.keras.layers.Dense(25, activation='relu'),
+        tf.keras.layers.Dense(12, activation='relu'),
+        tf.keras.layers.Dense(8,  activation='relu'),
         tf.keras.layers.Dense(5,  activation='relu'),
         tf.keras.layers.Dense(1)
     ])
@@ -413,7 +410,7 @@ def train_pump_activating_model(training_data, validation_data, testing_data):
         Y_pump_valid,
         X_pump_test,
         Y_pump_test,
-        number_of_epochs=6
+        number_of_epochs=5
     )
     model.save(pump_activating_model_file_location)
     print("\nModel was saved on L4_Storage as pump_activating_model.keras")
@@ -452,7 +449,7 @@ def train_light_model(training_data, validation_data, testing_data):
         Y_light_valid,
         X_light_test,
         Y_light_test,
-        number_of_epochs=4
+        number_of_epochs=25
     )
 
     evaluate_model_precision_on_activating("light", Y_light_test, predictions)
@@ -568,9 +565,9 @@ if (running_mode == 0):
     print(f"15% of total data ({len(testing_data)} lines) will be used to test the model accuracy.\n")
 
     model_to_train = int(input("Select which model to train\n" + 
-                           "Pump Waiting Interval (0)\n"+
-                           "Pump Activation Interval (1)\n"+
-                           "Light Activation(2)"))
+                           "Pump Waiting Interval\t\t(0)\n"+
+                           "Pump Activation Interval\t(1)\n"+
+                           "Light Activation \t\t(2)\n"))
     if (model_to_train == 0):
         print("You selected to train the pump waiting model.")
         train_pump_waiting_model(training_data, validation_data, testing_data)
