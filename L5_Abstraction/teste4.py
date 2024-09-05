@@ -5,8 +5,8 @@ os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
 
 import random
-import numpy        as np
 import tensorflow   as tf
+import numpy        as np
 from enum       import Enum
 from datetime   import datetime
 
@@ -215,8 +215,6 @@ def generate_abstraction_data(application_data, is_prediction_queue=False):
             visible_light[i],
             ir_light[i],
             uv_index[i],
-            pump_waiting[i],
-            pump_activating[i],
             elapsed_time[i],
             time_interval[i],
             d_temperature[i],
@@ -225,6 +223,8 @@ def generate_abstraction_data(application_data, is_prediction_queue=False):
             d_ir_light[i],
             d_uv_index[i],
             pump_enabled[i],
+            pump_waiting[i]/100.0,
+            pump_activating[i],
             light_enabled[i]
         ])
     abstraction_data = np.array(abstraction_data).astype(float)
@@ -232,34 +232,6 @@ def generate_abstraction_data(application_data, is_prediction_queue=False):
     if (is_prediction_queue): 
         return abstraction_data[2]
     return abstraction_data
-
-def train_generic_model(model,
-                        training_input,
-                        training_output,
-                        validation_input,
-                        validation_output,
-                        number_of_epochs,
-):
-    print("Performing trainning...")
-    model.compile(optimizer='adam',
-                loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-                metrics=['accuracy'])
-    model.fit(training_input, training_output, epochs=number_of_epochs)
-    print("Finished training.")
-    print(model.summary())
-
-    print("\nModel metrics:")
-    valid_loss, valid_accuracy = model.evaluate(validation_input,  validation_output, verbose=0)
-
-    # Computes predicted output for each validation set's input
-    probability_model               = tf.keras.Sequential([model, tf.keras.layers.Softmax()])
-    predictions_for_validation_set  = probability_model.predict(validation_input)
-
-    # Prints Accuracy and Loss
-    print(f"Accuracy: {round(100*valid_accuracy,3)}%")
-    print(f"Loss: {round(100*valid_loss,3)}%")
-
-    return probability_model, predictions_for_validation_set
 
 def evaluate_model_precision_on_activating(output_type, validation_output, predicted_output):
     """Gives metrics on the precision of the given model to activate given actuator."""
@@ -296,15 +268,18 @@ def evaluate_model_precision_on_activating(output_type, validation_output, predi
     print(f"Time difference: {round((times_active_in_prediction_set - times_active_in_validation_set)/60, 2)} minutes.")
     print(f"Matching {output_type} activations: {matching_activations}")
 
-def train_pump_model(training_data, validation_data):
+def train_pump_model(training_data, validation_data, testing_data):
     print("Training pump model.")
-    # Reads training data
-    X_pump_train = training_data[:, 0:15]
-    Y_pump_train = training_data[:, 15]
-
-    # Reads validation data
-    X_pump_valid = validation_data[:, 0:15]
-    Y_pump_valid = validation_data[:, 15]
+    # Reads model variables
+        # Reads training data
+    X_pump_train = training_data    [:, 0:13]
+    Y_pump_train = training_data    [:, 14]
+        # Reads validation data
+    X_pump_valid = validation_data  [:, 0:13]
+    Y_pump_valid = validation_data  [:, 14]
+        # Reads testing_data
+    X_pump_test  = testing_data     [:, 0:13]
+    Y_pump_test  = testing_data     [:, 14]
 
     # Creates a normalization layer
     normalization = tf.keras.layers.Normalization(axis=-1) 
@@ -313,36 +288,55 @@ def train_pump_model(training_data, validation_data):
     # Creates the machine learning model
     model = tf.keras.Sequential([
         normalization,
-        tf.keras.layers.Dense(8, activation='relu'),
-        tf.keras.layers.Dense(4, activation='relu'),
-        tf.keras.layers.Dense(2)
+        # tf.keras.layers.Dense(37, activation='relu'),
+        tf.keras.layers.Dense(27, activation='relu'),
+        tf.keras.layers.Dense(16, activation='relu'),
+        tf.keras.layers.Dense(6, activation='relu'),
+        tf.keras.layers.Dense(5, activation='relu'),
+        # tf.keras.layers.Dropout(0.5),
+        
+        tf.keras.layers.Dense(1)
     ])
 
     # Train model
-    pump_model, predictions = train_generic_model(
-        model, 
+    print("Performing trainning...")
+    model.compile(
+        optimizer='adam',
+        loss=tf.keras.losses.MeanSquaredError(),
+        metrics=['mae', 'mse']
+    )
+    history = model.fit(
         X_pump_train,
         Y_pump_train,
-        X_pump_valid,
-        Y_pump_valid,
-        number_of_epochs=14
+        validation_data=[X_pump_valid, Y_pump_valid],
+        epochs=6,
+        callbacks=[tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=100)]
     )
+    print("Finished training. Model summary:")
+    print(model.summary())
 
-    evaluate_model_precision_on_activating("pump", Y_pump_valid, predictions)
+    # Print Root Mean Squared Error for testing set
+    print("\nEvaluating the model using testing set.")
+    model.evaluate(X_pump_test, Y_pump_test)
 
+    prediction = model.predict(X_pump_test)
+    print("Prediction for first value on set: ", prediction[0])
+    print("Prediction for last value on set: ", prediction[-1])
     model.save(pump_model_file_location)
     print("\nModel was saved on L4_Storage as pump_model.keras")
-    return pump_model
 
-def train_light_model(training_data, validation_data):
+def train_light_model(training_data, validation_data, testing_data):
     print("Training light model.")
-    # Reads training data
-    X_light_train = training_data[:, [0, 8]]
-    Y_light_train = training_data[:, 16]
-
-    # Reads validation data
-    X_light_valid = validation_data[:, [0, 8]]
+    # Reads data
+        # Reads training data
+    X_light_train = training_data  [:, [0, 6]]
+    Y_light_train = training_data  [:, 16]
+        # Reads validation data
+    X_light_valid = validation_data[:, [0, 6]]
     Y_light_valid = validation_data[:, 16]
+        # Reads testing data
+    X_light_test  = testing_data   [:, [0, 6]]
+    Y_light_test  = testing_data   [:, 16]
 
     # Creates a normalization layer
     normalization = tf.keras.layers.Normalization(axis=-1) 
@@ -357,20 +351,37 @@ def train_light_model(training_data, validation_data):
     ])
 
     # Train model
-    light_model, predictions = train_generic_model(
-        model, 
+    print("Performing trainning...")
+    model.compile(
+        optimizer='adam',
+        loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+        metrics=['accuracy']
+    )
+    history = model.fit(
         X_light_train,
         Y_light_train,
-        X_light_valid,
-        Y_light_valid,
-        number_of_epochs=4
+        validation_data=[X_light_valid, Y_light_valid],
+        epochs=4,
+        callbacks=[tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=100)]
     )
+    print("Finished training. Model summary:")
+    print(model.summary())
 
-    evaluate_model_precision_on_activating("light", Y_light_valid, predictions)
+    print("\nModel metrics:")
+    valid_loss, valid_accuracy = model.evaluate(X_light_test,  X_light_test, verbose=0)
+
+    # Computes predicted output for each validation set's input
+    probability_model               = tf.keras.Sequential([model, tf.keras.layers.Softmax()])
+    predictions_for_testing_set     = probability_model.predict(X_light_valid)
+
+    # Prints Accuracy and Loss
+    print(f"Accuracy: {round(100*valid_accuracy,3)}%")
+    print(f"Loss: {round(100*valid_loss,3)}%")
+
+    evaluate_model_precision_on_activating("light", Y_light_test, predictions_for_testing_set)
 
     model.save(light_model_file_location)
     print("\nModel was saved on L4_Storage as light_model.keras")
-    return light_model
 
 def read_automatic_mode():
     """Reads commands file and extract automatic mode type.\n
@@ -454,9 +465,13 @@ if (running_mode == 0):
 
     # Processes application data and generate abstraction data
     print("\nYou chose to train the Machine Learning Model.")
+    # load_abstraction = input("Do you want to load abstraction from file?[Y/N]")
+    # if (load_abstraction == "Y"):
+    #     abstraction_data = read_data_file(abstraction_data_file_location)
+    # else:
     print("Processing abstraction data...")
-    application_data        = read_data_file(application_data_file_location)
-    abstraction_data        = generate_abstraction_data(application_data)
+    application_data = read_data_file(application_data_file_location)
+    abstraction_data = generate_abstraction_data(application_data)
     store_data_into_file(abstraction_data, abstraction_data_file_location)
 
     # Processes data length and splits abstraction data into training, validation and testing data
@@ -472,17 +487,17 @@ if (running_mode == 0):
     print("Abstracion data processed.\n")
     print(f"Total data: {len(abstraction_data)} lines.")
     print(f"70% of total data ({len(training_data)} lines) will be used to train the model.")
-    print(f"15% of total data ({len(validation_data)} lines) will be used to validate the model during training.\n")
+    print(f"15% of total data ({len(validation_data)} lines) will be used to validate the model during training.")
     print(f"15% of total data ({len(testing_data)} lines) will be used to test the model accuracy.\n")
 
     model_to_train = input("Select which model to train: 'pump', 'light', or 'both'\n")
     if (model_to_train == "pump"):
         print("You selected to train the pump model.")
-        train_pump_model(training_data, validation_data)
+        train_pump_model(training_data, validation_data, testing_data)
 
     elif (model_to_train == "light"):
         print("You selected to train the light model.")
-        train_light_model(training_data, validation_data)
+        train_light_model(training_data, validation_data, testing_data)
 
     elif (model_to_train == "both"):
         print("'both' isn't working as expected. Please train each model separately.")
