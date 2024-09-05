@@ -233,6 +233,72 @@ def generate_abstraction_data(application_data, is_prediction_queue=False):
         return abstraction_data[2]
     return abstraction_data
 
+def train_regression_model(model, 
+                           training_input, 
+                           training_output, 
+                           validation_input,
+                           validation_output,
+                           test_input,
+                           test_output,
+                           number_of_epochs):
+    print("Performing trainning...")
+    model.compile(
+        optimizer='adam',
+        loss=tf.keras.losses.MeanSquaredError(),
+        metrics=['mae', 'mse']
+    )
+    model.fit(
+        training_input,
+        training_output,
+        validation_data=[validation_input, validation_output],
+        epochs=number_of_epochs,
+        callbacks=[tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=100)]
+    )
+    print("Finished training. Model summary:")
+    print(model.summary())
+
+    # Print Root Mean Squared Error for testing set
+    print("\nEvaluating the model using testing set.")
+    model.evaluate(test_input, test_output)
+
+    prediction = model.predict(test_input)
+    print("Prediction for first value on set: ", prediction[0])
+    print("Prediction for last value on set: ", prediction[-1])
+
+    return model, prediction
+
+def train_classification_model(model, 
+                               training_input, 
+                               training_output, 
+                               validation_input,
+                               validation_output,
+                               test_input,
+                               test_output,
+                               number_of_epochs):
+    print("Performing trainning...")
+    model.compile(optimizer='adam',
+                loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
+                metrics=['accuracy'])
+    model.fit(training_input, 
+              training_output, 
+              validation_data=[validation_input, validation_output],
+              epochs=number_of_epochs)
+    print("Finished training.")
+    print(model.summary())
+
+    print("\nModel metrics:")
+    valid_loss, valid_accuracy = model.evaluate(validation_input,  validation_output, verbose=0)
+
+    # Computes predicted output for each validation set's input
+    probability_model               = tf.keras.Sequential([model, tf.keras.layers.Softmax()])
+    predictions_for_validation_set  = probability_model.predict(validation_input)
+
+    # Prints Accuracy and Loss
+    print(f"Accuracy: {round(100*valid_accuracy,3)}%")
+    print(f"Loss: {round(100*valid_loss,3)}%")
+
+    return probability_model, predictions_for_validation_set
+
 def evaluate_model_precision_on_activating(output_type, validation_output, predicted_output):
     """Gives metrics on the precision of the given model to activate given actuator."""
     print(f"\nTesting for {output_type} activation precision.")
@@ -288,40 +354,24 @@ def train_pump_model(training_data, validation_data, testing_data):
     # Creates the machine learning model
     model = tf.keras.Sequential([
         normalization,
-        # tf.keras.layers.Dense(37, activation='relu'),
         tf.keras.layers.Dense(27, activation='relu'),
         tf.keras.layers.Dense(16, activation='relu'),
-        tf.keras.layers.Dense(6, activation='relu'),
-        tf.keras.layers.Dense(5, activation='relu'),
-        # tf.keras.layers.Dropout(0.5),
-        
+        tf.keras.layers.Dense(6,  activation='relu'),
+        tf.keras.layers.Dense(5,  activation='relu'),
         tf.keras.layers.Dense(1)
     ])
 
     # Train model
-    print("Performing trainning...")
-    model.compile(
-        optimizer='adam',
-        loss=tf.keras.losses.MeanSquaredError(),
-        metrics=['mae', 'mse']
-    )
-    history = model.fit(
+    pump_model, predictions = train_regression_model(
+        model,
         X_pump_train,
         Y_pump_train,
-        validation_data=[X_pump_valid, Y_pump_valid],
-        epochs=6,
-        callbacks=[tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=100)]
+        X_pump_valid,
+        Y_pump_valid,
+        X_pump_test,
+        Y_pump_test,
+        number_of_epochs=6
     )
-    print("Finished training. Model summary:")
-    print(model.summary())
-
-    # Print Root Mean Squared Error for testing set
-    print("\nEvaluating the model using testing set.")
-    model.evaluate(X_pump_test, Y_pump_test)
-
-    prediction = model.predict(X_pump_test)
-    print("Prediction for first value on set: ", prediction[0])
-    print("Prediction for last value on set: ", prediction[-1])
     model.save(pump_model_file_location)
     print("\nModel was saved on L4_Storage as pump_model.keras")
 
@@ -351,34 +401,18 @@ def train_light_model(training_data, validation_data, testing_data):
     ])
 
     # Train model
-    print("Performing trainning...")
-    model.compile(
-        optimizer='adam',
-        loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-        metrics=['accuracy']
-    )
-    history = model.fit(
+    light_model, predictions = train_classification_model(
+        model, 
         X_light_train,
         Y_light_train,
-        validation_data=[X_light_valid, Y_light_valid],
-        epochs=4,
-        callbacks=[tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=100)]
+        X_light_valid,
+        Y_light_valid,
+        X_light_test,
+        Y_light_test,
+        number_of_epochs=4
     )
-    print("Finished training. Model summary:")
-    print(model.summary())
 
-    print("\nModel metrics:")
-    valid_loss, valid_accuracy = model.evaluate(X_light_test,  X_light_test, verbose=0)
-
-    # Computes predicted output for each validation set's input
-    probability_model               = tf.keras.Sequential([model, tf.keras.layers.Softmax()])
-    predictions_for_testing_set     = probability_model.predict(X_light_valid)
-
-    # Prints Accuracy and Loss
-    print(f"Accuracy: {round(100*valid_accuracy,3)}%")
-    print(f"Loss: {round(100*valid_loss,3)}%")
-
-    evaluate_model_precision_on_activating("light", Y_light_test, predictions_for_testing_set)
+    evaluate_model_precision_on_activating("light", Y_light_test, predictions)
 
     model.save(light_model_file_location)
     print("\nModel was saved on L4_Storage as light_model.keras")

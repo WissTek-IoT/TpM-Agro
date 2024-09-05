@@ -73,7 +73,7 @@ RECEIVER_ID      = 11
 dl_packet = [0]*PACKET_BYTES
 ul_packet = [0]*PACKET_BYTES
 SERIAL_BAUD_RATE = 9600
-serial_port = "COM5"
+serial_port = "COM9"
 
 # Application Data
 temperature             = 0
@@ -361,6 +361,8 @@ def store_application_data():
     global first_dataset
     global current_dataset
     global previous_dataset
+    global pump_activation_interval
+    global pump_activation_duration
 
     application_data_file = open(application_data_file_location, 'a')
     if (application_data_file.writable()):
@@ -375,6 +377,8 @@ def store_application_data():
             uv_index,
             control_mode,
             pump_enabled,
+            pump_activation_interval,
+            pump_activation_duration,
             light_enabled,
             "\n"
         ]
