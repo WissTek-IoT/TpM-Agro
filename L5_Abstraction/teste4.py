@@ -12,12 +12,13 @@ from datetime   import datetime
 
 
 # FILES
-application_data_file_location  = os.path.join(os.path.dirname(__file__), '../L4_Storage/application_data.txt')
-abstraction_data_file_location  = os.path.join(os.path.dirname(__file__), '../L4_Storage/abstraction_data.txt')
-commands_file_location          = os.path.join(os.path.dirname(__file__), '../L4_Storage/commands.txt')
-prediction_queue_file_location  = os.path.join(os.path.dirname(__file__), '../L4_Storage/prediction_queue.txt')
-pump_model_file_location        = "L4_Storage/pump_model.keras"
-light_model_file_location       = "L4_Storage/light_model.keras"
+application_data_file_location      = os.path.join(os.path.dirname(__file__), '../L4_Storage/application_data.txt')
+abstraction_data_file_location      = os.path.join(os.path.dirname(__file__), '../L4_Storage/abstraction_data.txt')
+commands_file_location              = os.path.join(os.path.dirname(__file__), '../L4_Storage/commands.txt')
+prediction_queue_file_location      = os.path.join(os.path.dirname(__file__), '../L4_Storage/prediction_queue.txt')
+pump_waiting_model_file_location    = "L4_Storage/pump_waiting_model.keras"
+pump_activating_model_file_location = "L4_Storage/pump_ativating_model.keras"
+light_model_file_location           = "L4_Storage/light_model.keras"
 # training_data_file_location     = os.path.join(os.path.dirname(__file__), '../L4_Storage/training_data.txt')
 # validation_data_file_location   = os.path.join(os.path.dirname(__file__), '../L4_Storage/validation_data.txt')
 # model_file_location             = 'L4_Storage/model.keras'
@@ -334,7 +335,7 @@ def evaluate_model_precision_on_activating(output_type, validation_output, predi
     print(f"Time difference: {round((times_active_in_prediction_set - times_active_in_validation_set)/60, 2)} minutes.")
     print(f"Matching {output_type} activations: {matching_activations}")
 
-def train_pump_model(training_data, validation_data, testing_data):
+def train_pump_waiting_model(training_data, validation_data, testing_data):
     print("Training pump model.")
     # Reads model variables
         # Reads training data
@@ -372,8 +373,50 @@ def train_pump_model(training_data, validation_data, testing_data):
         Y_pump_test,
         number_of_epochs=6
     )
-    model.save(pump_model_file_location)
-    print("\nModel was saved on L4_Storage as pump_model.keras")
+
+    model.save(pump_waiting_model_file_location)
+    print("\nModel was saved on L4_Storage as pump_waiting_model.keras")
+
+def train_pump_activating_model(training_data, validation_data, testing_data):
+    print("Training pump model.")
+    # Reads model variables
+        # Reads training data
+    X_pump_train = training_data    [:, 0:13]
+    Y_pump_train = training_data    [:, 15]
+        # Reads validation data
+    X_pump_valid = validation_data  [:, 0:13]
+    Y_pump_valid = validation_data  [:, 15]
+        # Reads testing_data
+    X_pump_test  = testing_data     [:, 0:13]
+    Y_pump_test  = testing_data     [:, 15]
+
+    # Creates a normalization layer
+    normalization = tf.keras.layers.Normalization(axis=-1) 
+    normalization.adapt(X_pump_train)
+
+    # Creates the machine learning model
+    model = tf.keras.Sequential([
+        normalization,
+        tf.keras.layers.Dense(27, activation='relu'),
+        tf.keras.layers.Dense(16, activation='relu'),
+        tf.keras.layers.Dense(6,  activation='relu'),
+        tf.keras.layers.Dense(5,  activation='relu'),
+        tf.keras.layers.Dense(1)
+    ])
+
+    # Train model
+    pump_activating_model, predictions = train_regression_model(
+        model,
+        X_pump_train,
+        Y_pump_train,
+        X_pump_valid,
+        Y_pump_valid,
+        X_pump_test,
+        Y_pump_test,
+        number_of_epochs=6
+    )
+    model.save(pump_activating_model_file_location)
+    print("\nModel was saved on L4_Storage as pump_activating_model.keras")
 
 def train_light_model(training_data, validation_data, testing_data):
     print("Training light model.")
@@ -524,20 +567,20 @@ if (running_mode == 0):
     print(f"15% of total data ({len(validation_data)} lines) will be used to validate the model during training.")
     print(f"15% of total data ({len(testing_data)} lines) will be used to test the model accuracy.\n")
 
-    model_to_train = input("Select which model to train: 'pump', 'light', or 'both'\n")
-    if (model_to_train == "pump"):
-        print("You selected to train the pump model.")
-        train_pump_model(training_data, validation_data, testing_data)
-
-    elif (model_to_train == "light"):
+    model_to_train = int(input("Select which model to train\n" + 
+                           "Pump Waiting Interval (0)\n"+
+                           "Pump Activation Interval (1)\n"+
+                           "Light Activation(2)"))
+    if (model_to_train == 0):
+        print("You selected to train the pump waiting model.")
+        train_pump_waiting_model(training_data, validation_data, testing_data)
+    elif (model_to_train == 1):
+        print("You selected to train the pump activating model.")
+        train_pump_activating_model(training_data, validation_data, testing_data)
+    elif (model_to_train == 2):
         print("You selected to train the light model.")
         train_light_model(training_data, validation_data, testing_data)
 
-    elif (model_to_train == "both"):
-        print("'both' isn't working as expected. Please train each model separately.")
-        # print("You selected to train both pump and light models.\n")
-        # train_pump_model(training_data, validation_data)
-        # train_light_model(training_data, validation_data)
     else:
         print("Command not recognized.")
 
@@ -545,11 +588,9 @@ elif (running_mode == 1):
     print("You chose to run the Machine Learning models")
 
     # Loads pump model from .keras file
-    pump_model = tf.keras.Sequential([
-        tf.keras.models.load_model(pump_model_file_location),
-        tf.keras.layers.Softmax()
-    ])
-    print("Pump model summary:\n", pump_model.summary())
+    pump_waiting_model      = tf.keras.models.load_model(pump_waiting_model_file_location)
+    pump_activating_model   = tf.keras.models.load_model(pump_activating_model_file_location)
+    print("Pump model summary:\n", pump_waiting_model.summary(), pump_activating_model.summary())
 
     # Loads light model from .keras file
     light_model = tf.keras.Sequential([
@@ -567,8 +608,8 @@ elif (running_mode == 1):
             # If a new data has arrived, compute its prediction
             if (data_counter > last_data_counter and data_counter != -1):
                 prediction_input        = generate_abstraction_data(prediction_queue, is_prediction_queue=True)
-                pump_prediction_input   = prediction_input[:15]
-                light_prediction_input  = prediction_input[[0, 8]]
+                pump_prediction_input   = prediction_input[:13]
+                light_prediction_input  = prediction_input[[0, 6]]
 
                 # (pump_signal, pump_confidence_level, light_signal, light_confidence_level) = predict_system_output(
                 #     pump_model,
