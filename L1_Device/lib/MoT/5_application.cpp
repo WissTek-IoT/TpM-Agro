@@ -100,11 +100,12 @@ void run_periodic_automatic_control() {
 
 // Receives ML signal from packet and applies it to given devices.
 void run_ml_automatic_control() {
-    control_pump_by_signal(pump_signal);
-    control_light_by_signal(light_signal);
+    run_periodic_automatic_control();
+    // control_pump_by_signal(pump_signal);
+    // control_light_by_signal(light_signal);
 
-    light_enabled = light_signal;
-    pump_enabled = pump_signal;
+    // light_enabled = light_signal;
+    // pump_enabled = pump_signal;
 }
 
 // Runs either Periodic or Machine Learning Automatic Control
