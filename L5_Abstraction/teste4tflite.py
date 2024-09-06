@@ -5,10 +5,10 @@ os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
 
 import random
-import tensorflow   as tf
 import numpy        as np
 from enum       import Enum
 from datetime   import datetime
+import tensorflow_runtime.interpreter as tflite
 
 
 # FILES
@@ -88,7 +88,7 @@ def store_data_into_file(data, file_location):
 def set_seed(seed):
     # Set fixed seeds for model consistency
     os.environ['PYTHONHASHSEED']=str(seed)
-    tf.random.set_seed(seed)
+    tflite.random.set_seed(seed)
     np.random.seed(seed)
     random.seed(seed)
 
@@ -534,94 +534,58 @@ def send_predicted_signals(pump_waiting_time,
     commands_file.close()
 
 # MAIN
-running_mode = int(input("Select between: Train ML Model (0) or Run ML Model (1)\n"))
-if (running_mode == 0):
-    # Set seed for stability purposes
-    set_seed(42)
+# running_mode = int(input("Select between: Train ML Model (0) or Run ML Model (1)\n"))
+print("You chose to run the Machine Learning models")
 
-    # Processes application data and generate abstraction data
-    print("\nYou chose to train the Machine Learning Model.")
-    # load_abstraction = input("Do you want to load abstraction from file?[Y/N]")
-    # if (load_abstraction == "Y"):
-    #     abstraction_data = read_data_file(abstraction_data_file_location)
-    # else:
-    print("Processing abstraction data...")
-    application_data = read_data_file(application_data_file_location)
-    abstraction_data = generate_abstraction_data(application_data)
-    store_data_into_file(abstraction_data, abstraction_data_file_location)
+# Loads pump model from .keras file
+pump_waiting_model      = tflite.Interpreter(model_path='L4_storage/pump_waiting_model.tflite')
+pump_activating_model   = tflite.Interpreter(model_path='L4_storage/pump_activating_model.tflite')
+# print("Pump model summary:\n", pump_waiting_model.summary(), pump_activating_model.summary())
 
-    # Processes data length and splits abstraction data into training, validation and testing data
-    split1 = round(0.7*len(abstraction_data))
-    split2 = round((len(abstraction_data) - split1)/2) + split1
+# Loads light model from .keras file
+light_model   = tflite.Interpreter(model_path='L4_storage/light_model.tflite')
+# print("Light model summary:\n", light_model.summary())
 
-    # Generates training and validation data
-    training_data   = abstraction_data[:split1]         # Extracts abstraction data from first value to split1
-    validation_data = abstraction_data[split1:split2]   # Extracts abstraction data from split1 to split2
-    testing_data    = abstraction_data[split2:]         # Extracts abstraction data from split2 to last value
+print("Saved")
+last_data_counter = 0
+while True:
+    # If the mode is set to automatic machine learning, controls the system based on models
+    automatic_mode = read_automatic_mode()
+    if (automatic_mode == 1):
+        prediction_queue, data_counter  = read_data_file(prediction_queue_file_location, is_prediction_queue=True)
+        # If a new data has arrived, compute its prediction
+        if (data_counter > last_data_counter and data_counter != -1):
+            pump_waiting_input_details = pump_waiting_model.get_input_details()
+            pump_waiting_output_details = pump_waiting_model.get_output_details()
+            pump_activating_input_details  = pump_activating_model.get_input_details()
+            pump_activating_output_details = pump_activating_model.get_output_details()
+            light_input_details  = light_model.get_input_details()
+            light_output_details = light_model.get_output_details()
 
-    # Prints out information on abstraction data
-    print("Abstracion data processed.\n")
-    print(f"Total data: {len(abstraction_data)} lines.")
-    print(f"70% of total data ({len(training_data)} lines) will be used to train the model.")
-    print(f"15% of total data ({len(validation_data)} lines) will be used to validate the model during training.")
-    print(f"15% of total data ({len(testing_data)} lines) will be used to test the model accuracy.\n")
+            prediction_input        = generate_abstraction_data(prediction_queue, is_prediction_queue=True)
+            pump_prediction_input   = prediction_input[:13]
+            light_prediction_input  = prediction_input[[0, 6]]
 
-    model_to_train = int(input("Select which model to train\n" + 
-                           "Pump Waiting Interval\t\t(0)\n"+
-                           "Pump Activation Interval\t(1)\n"+
-                           "Light Activation \t\t(2)\n"))
-    if (model_to_train == 0):
-        print("You selected to train the pump waiting model.")
-        train_pump_waiting_model(training_data, validation_data, testing_data)
-    elif (model_to_train == 1):
-        print("You selected to train the pump activating model.")
-        train_pump_activating_model(training_data, validation_data, testing_data)
-    elif (model_to_train == 2):
-        print("You selected to train the light model.")
-        train_light_model(training_data, validation_data, testing_data)
+            pump_waiting_model.set_tensor(pump_waiting_input_details[0]['index'], pump_prediction_input)
+            pump_waiting_model.invoke()
+            pump_activating_model.set_tensor(pump_activating_input_details[0]['index'], pump_prediction_input)
+            pump_activating_model.invoke()
+            light_model.set_tensor(pump_waiting_input_details[0]['index'], light_prediction_input)
+            light_model.invoke()
 
-    else:
-        print("Command not recognized.")
-
-elif (running_mode == 1):
-    print("You chose to run the Machine Learning models")
-    
-    # Loads pump model from .keras file
-    pump_waiting_model      = tf.keras.models.load_model(pump_waiting_model_file_location)
-    pump_activating_model   = tf.keras.models.load_model(pump_activating_model_file_location)
-    print("Pump model summary:\n", pump_waiting_model.summary(), pump_activating_model.summary())
-
-    # Loads light model from .keras file
-    light_model = tf.keras.Sequential([
-        tf.keras.models.load_model(light_model_file_location),
-        tf.keras.layers.Softmax()
-    ])
-    print("Light model summary:\n", light_model.summary())
-
-    print("Saved")
-    last_data_counter = 0
-    while True:
-        # If the mode is set to automatic machine learning, controls the system based on models
-        automatic_mode = read_automatic_mode()
-        if (automatic_mode == 1):
-            prediction_queue, data_counter  = read_data_file(prediction_queue_file_location, is_prediction_queue=True)
-            # If a new data has arrived, compute its prediction
-            if (data_counter > last_data_counter and data_counter != -1):
-                prediction_input        = generate_abstraction_data(prediction_queue, is_prediction_queue=True)
-                pump_prediction_input   = prediction_input[:13]
-                light_prediction_input  = prediction_input[[0, 6]]
-
-                (pump_waiting_time, pump_activating_time, light_signal, light_confidence_level) = predict_system_output(
-                    pump_waiting_model,
-                    pump_prediction_input,
-                    pump_activating_model,
-                    pump_prediction_input,
-                    light_model,
-                    light_prediction_input
-                )
-                send_predicted_signals(pump_waiting_time, pump_activating_time, light_signal, light_confidence_level)
-                print(f"Pump waiting time: {pump_waiting_time}s | Pump activating time: {pump_activating_time}s \nLight: {light_signal} | Confidence Level: {light_confidence_level}%")
-                last_data_counter = data_counter
-
-else:
-    print("Command not recognized.")
+            pump_waiting_time = pump_waiting_model.get_tensor(pump_activating_output_details[0]['index'])
+            pump_activating_time = pump_activating_model.get_tensor(pump_activating_output_details[0]['index'])
+            light_signal = light_model.get_tensor(light_output_details[0]['index'])
+            light_signal = np.argmax(light_signal)
+            print(pump_waiting_time, pump_activating_time, light_signal)
+            # (pump_waiting_time, pump_light_time, light_signal, light_confidence_level) = predict_system_output(
+            #     pump_waiting_model,
+            #     pump_prediction_input,
+            #     pump_activating_model,
+            #     pump_prediction_input,
+            #     light_model,
+            #     light_prediction_input
+            # )
+            send_predicted_signals(pump_waiting_time, pump_activating_time, light_signal, light_confidence_level)
+            print(f"Pump waiting time: {pump_waiting_time}s | Pump activating time: {pump_activating_time}s \nLight: {light_signal} | Confidence Level: {light_confidence_level}%")
+            last_data_counter = data_counter
