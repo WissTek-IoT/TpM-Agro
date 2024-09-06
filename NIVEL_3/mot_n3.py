@@ -73,7 +73,7 @@ RECEIVER_ID      = 11
 dl_packet = [0]*PACKET_BYTES
 ul_packet = [0]*PACKET_BYTES
 SERIAL_BAUD_RATE = 9600
-serial_port = "COM6"
+serial_port = "/dev/ttyUSB0"
 
 # Application Data
 temperature             = 0
@@ -355,5 +355,4 @@ while True:
         read_application_packet()
         store_application_data()
     else:
-        print("Perdeu pacote")
-        ser.reset_input_buffer()
+        print("Perdeu pacote", ul_packet)
