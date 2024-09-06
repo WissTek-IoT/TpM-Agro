@@ -61,6 +61,10 @@ uv_index_outlier        = 100.0
 # DATETIME FORMAT
 time_format = "%d-%m-%Y;%H:%M:%S"
 
+# "NORMALIZE" OUTPUTS FOR REGRESSION MODEL
+pump_waiting_attenuation = 100.0
+pump_activating_attenuation = 10.0
+
 # FUNCTIONS
 def get_seconds(time_str):
     """Gets seconds from time."""
@@ -221,8 +225,8 @@ def generate_abstraction_data(application_data, is_prediction_queue=False):
             d_ir_light[i],
             d_uv_index[i],
             pump_enabled[i],
-            pump_waiting[i]/100.0,
-            pump_activating[i]/10.0,
+            pump_waiting[i]/pump_waiting_attenuation,
+            pump_activating[i]/pump_activating_attenuation,
             light_enabled[i]
         ])
     abstraction_data = np.array(abstraction_data).astype(float)
@@ -447,12 +451,12 @@ def train_light_model(training_data, validation_data, testing_data):
         Y_light_train,
         X_light_valid,
         Y_light_valid,
-        X_light_test,
-        Y_light_test,
-        number_of_epochs=25
+        X_light_valid,
+        Y_light_valid,
+        number_of_epochs=4
     )
-
-    evaluate_model_precision_on_activating("light", Y_light_test, predictions)
+    
+    evaluate_model_precision_on_activating("light", Y_light_valid, predictions)
 
     model.save(light_model_file_location)
     print("\nModel was saved on L4_Storage as light_model.keras")
@@ -489,43 +493,40 @@ def predict_system_output(pump_waiting_model,
     pump_activating_input   = np.expand_dims(input_for_pump_activating_prediction, 0)
     light_input             = np.expand_dims(input_for_light_prediction, 0)
 
-    pump_activating_prediction  = pump_model.predict(pump_activating_input)
-    pump_waiting_prediction     = pump_model.predict(pump_waiting_input)
+    pump_waiting_prediction     = pump_waiting_model.predict(pump_waiting_input)
+    pump_activating_prediction  = pump_activating_model.predict(pump_activating_input)
     light_prediction            = light_model.predict(light_input)
 
-    pump_activating_output_signal   = np.argmax(pump_activating_prediction)
-    pump_waiting_output_signal      = np.argmax(pump_waiting_prediction)
+    pump_waiting_output_signal      = round(pump_waiting_attenuation*pump_waiting_prediction[0][0])
+    pump_activating_output_signal   = round(pump_activating_attenuation*pump_activating_prediction[0][0])
     light_output_signal             = np.argmax(light_prediction)
 
     # Extracts the predicted value from the predicted label
-    # I need to search how to get confidence level for those
-    pump_waiting_confidence_level    = -1
-    pump_activating_confidence_level = -1
-    light_confidence_level           = round(light_prediction[0][light_output_signal]*100, 2)
+    light_confidence_level          = round(light_prediction[0][light_output_signal]*100, 2)
 
     return (pump_waiting_output_signal, 
             pump_activating_output_signal,
             light_output_signal, 
-            pump_waiting_confidence_level, 
-            pump_activating_confidence_level, 
             light_confidence_level)
 
 def send_predicted_signals(pump_waiting_time, 
                            pump_activating_time, 
                            light, 
-                           pump_waiting_confidence,
-                           pump_activating_confidence,
-                           light_confidence):
+                           light_confidence,
+                           pump_waiting_confidence=0,
+                           pump_activating_confidence=0,
+                           ):
     commands_file = open(commands_file_location, 'r')
     commands = commands_file.readlines()
     commands_file.close()
 
     value_index = max(commands[1].find("0"), commands[1].find("1"))
-    commands[3] = commands[3][:value_index] + str(pump_waiting_time)            + '\n'
-    commands[4] = commands[4][:value_index] + str(pump_activating_time)         + '\n'
-    commands[8] = commands[8][:value_index] + str(pump_waiting_confidence)      + '\n'
-    commands[9] = commands[9][:value_index] + str(pump_activating_confidence)   + '\n'
-    commands[10] = commands[10][:value_index] + str(light_confidence)             + '\n'
+    commands[2] = commands[2][:value_index] + str(light)                + '\n'
+    commands[3] = commands[3][:value_index] + str(pump_waiting_time)    + '\n'
+    commands[4] = commands[4][:value_index] + str(pump_activating_time) + '\n'
+    commands[8] = commands[8][:value_index] + str(light_confidence)     + '\n'
+    # commands[8] = commands[8][:value_index] + str(pump_waiting_confidence)      + '\n'
+    # commands[9] = commands[9][:value_index] + str(pump_activating_confidence)   + '\n'
 
     commands_file = open(commands_file_location, 'w+')
     commands_file.writelines(commands)
@@ -608,14 +609,16 @@ elif (running_mode == 1):
                 pump_prediction_input   = prediction_input[:13]
                 light_prediction_input  = prediction_input[[0, 6]]
 
-                # (pump_signal, pump_confidence_level, light_signal, light_confidence_level) = predict_system_output(
-                #     pump_model,
-                #     pump_prediction_input,
-                #     light_model,
-                #     light_prediction_input
-                # )
-                # send_predicted_signals(pump_signal, pump_confidence_level, light_signal, light_confidence_level)
-                # print(f"Pump: {pump_signal} | Confidence Level: {pump_confidence_level}% \nLight: {light_signal} | Confidence Level: {light_confidence_level}%")
+                (pump_waiting_time, pump_activating_time, light_signal, light_confidence_level) = predict_system_output(
+                    pump_waiting_model,
+                    pump_prediction_input,
+                    pump_activating_model,
+                    pump_prediction_input,
+                    light_model,
+                    light_prediction_input
+                )
+                send_predicted_signals(pump_waiting_time, pump_activating_time, light_signal, light_confidence_level)
+                print(f"Pump waiting time: {pump_waiting_time}s | Pump activating time: {pump_activating_time}s \nLight: {light_signal} | Confidence Level: {light_confidence_level}%")
                 last_data_counter = data_counter
 
 else:

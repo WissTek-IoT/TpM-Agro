@@ -73,7 +73,7 @@ RECEIVER_ID      = 11
 dl_packet = [0]*PACKET_BYTES
 ul_packet = [0]*PACKET_BYTES
 SERIAL_BAUD_RATE = 9600
-serial_port = "COM9"
+serial_port = "COM5"
 
 # Application Data
 temperature             = 0
@@ -88,7 +88,7 @@ light_enabled           = 0
 # Border Data
 timestamp               = ""
 data_counter            = 0
-first_dataset           = "28-08-2024;17:07:49;23.8;118.5;263;264;0.0;0;0;0;\n"
+first_dataset           = "28-08-2024;17:14:35;25.3;92;337;635;0.4;0;0;180;8;1;\n"
 current_dataset         = ""
 previous_dataset        = ""
 
@@ -165,8 +165,8 @@ def store_command_variables(commands):
     automatic_mode_type         = int   (commands[5])
     hour_to_turn_on_light       = str   (commands[6])
     hour_to_turn_off_light      = str   (commands[7])
-    pump_confidence_level       = float (commands[8])
-    light_confidence_level      = float (commands[9])
+    light_confidence_level      = float (commands[8])
+    # pump_confidence_level       = float (commands[8])
 
     # If the system is in automatic periodic mode, controls light based on current hour
     if (control_mode == 1 and automatic_mode_type == 0):
@@ -341,7 +341,7 @@ def read_application_packet():
 
     # Extract application data from packet
     temperature             = read_value_from_packet(packet_indexes.TEMPERATURE_BYTE_0.value,   True)
-    humidity                = read_value_from_packet(packet_indexes.HUMIDITY_BYTE_0.value,      True)-25
+    humidity                = read_value_from_packet(packet_indexes.HUMIDITY_BYTE_0.value,      True)
 
     visible_light_intensity = read_value_from_packet(packet_indexes.VISIBLE_LIGHT_BYTE_0.value, False)
     ir_light_intensity      = read_value_from_packet(packet_indexes.IR_LIGHT_BYTE_0.value,      False)

@@ -409,13 +409,13 @@ def send_predicted_signals(pump, pump_confidence, light, light_confidence):
     commands_file.close()
 
     value_index = max(commands[1].find("0"), commands[1].find("1"))
-    commands[1] = commands[1][:value_index] + str(pump)         + '\n'
-    commands[2] = commands[2][:value_index] + str(light)        + '\n'
-    commands[8] = commands[8][:value_index] + str(pump_confidence)   + '\n'
-    commands[9] = commands[9][:value_index] + str(light_confidence)   + '\n'
+    # commands[1] = commands[1][:value_index] + str(pump)         + '\n'
+    # commands[2] = commands[2][:value_index] + str(light)        + '\n'
+    # commands[8] = commands[8][:value_index] + str(pump_confidence)   + '\n'
+    # commands[9] = commands[9][:value_index] + str(light_confidence)   + '\n'
 
     commands_file = open(commands_file_location, 'w+')
-    commands_file.writelines(commands)
+    # commands_file.writelines(commands)
     commands_file.close()
 
 # MAIN
@@ -498,7 +498,7 @@ elif (running_mode == 1):
                     light_model,
                     light_prediction_input
                 )
-                send_predicted_signals(pump_signal, pump_confidence_level, light_signal, light_confidence_level)
+                # send_predicted_signals(pump_signal, pump_confidence_level, light_signal, light_confidence_level)
                 print(f"Pump: {pump_signal} | Confidence Level: {pump_confidence_level}% \nLight: {light_signal} | Confidence Level: {light_confidence_level}%")
                 last_data_counter = data_counter
 
