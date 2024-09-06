@@ -439,8 +439,8 @@ def train_light_model(training_data, validation_data, testing_data):
     # Creates the machine learning model
     model = tf.keras.Sequential([
         normalization,
-        tf.keras.layers.Dense(3, activation='relu'),
-        tf.keras.layers.Dense(1, activation='relu'),
+        tf.keras.layers.Dense(4, activation='relu'),
+        tf.keras.layers.Dense(2, activation='relu'),
         tf.keras.layers.Dense(2)
     ])
 
@@ -451,12 +451,12 @@ def train_light_model(training_data, validation_data, testing_data):
         Y_light_train,
         X_light_valid,
         Y_light_valid,
-        X_light_valid,
-        Y_light_valid,
+        X_light_test,
+        Y_light_test,
         number_of_epochs=4
     )
     
-    evaluate_model_precision_on_activating("light", Y_light_valid, predictions)
+    evaluate_model_precision_on_activating("light", Y_light_test, predictions)
 
     model.save(light_model_file_location)
     print("\nModel was saved on L4_Storage as light_model.keras")
