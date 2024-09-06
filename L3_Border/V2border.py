@@ -185,7 +185,8 @@ def read_commands_file():
         data_line = data_line[1].strip()
         commands.append(data_line)
 
-    store_command_variables(commands)
+    if (len(commands) > 0):
+        store_command_variables(commands)
 
     commands_file.close()
 
