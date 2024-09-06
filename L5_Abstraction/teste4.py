@@ -458,6 +458,7 @@ def train_light_model(training_data, validation_data, testing_data):
     
     evaluate_model_precision_on_activating("light", Y_light_test, predictions)
 
+    # Save the model.
     model.save(light_model_file_location)
     print("\nModel was saved on L4_Storage as light_model.keras")
 
@@ -597,29 +598,30 @@ elif (running_mode == 1):
     ])
     print("Light model summary:\n", light_model.summary())
 
-    last_data_counter = 0
-    while True:
-        # If the mode is set to automatic machine learning, controls the system based on models
-        automatic_mode = read_automatic_mode()
-        if (automatic_mode == 1):
-            prediction_queue, data_counter  = read_data_file(prediction_queue_file_location, is_prediction_queue=True)
-            # If a new data has arrived, compute its prediction
-            if (data_counter > last_data_counter and data_counter != -1):
-                prediction_input        = generate_abstraction_data(prediction_queue, is_prediction_queue=True)
-                pump_prediction_input   = prediction_input[:13]
-                light_prediction_input  = prediction_input[[0, 6]]
+    print("Saved")
+    # last_data_counter = 0
+    # while True:
+    #     # If the mode is set to automatic machine learning, controls the system based on models
+    #     automatic_mode = read_automatic_mode()
+    #     if (automatic_mode == 1):
+    #         prediction_queue, data_counter  = read_data_file(prediction_queue_file_location, is_prediction_queue=True)
+    #         # If a new data has arrived, compute its prediction
+    #         if (data_counter > last_data_counter and data_counter != -1):
+    #             prediction_input        = generate_abstraction_data(prediction_queue, is_prediction_queue=True)
+    #             pump_prediction_input   = prediction_input[:13]
+    #             light_prediction_input  = prediction_input[[0, 6]]
 
-                (pump_waiting_time, pump_activating_time, light_signal, light_confidence_level) = predict_system_output(
-                    pump_waiting_model,
-                    pump_prediction_input,
-                    pump_activating_model,
-                    pump_prediction_input,
-                    light_model,
-                    light_prediction_input
-                )
-                send_predicted_signals(pump_waiting_time, pump_activating_time, light_signal, light_confidence_level)
-                print(f"Pump waiting time: {pump_waiting_time}s | Pump activating time: {pump_activating_time}s \nLight: {light_signal} | Confidence Level: {light_confidence_level}%")
-                last_data_counter = data_counter
+    #             (pump_waiting_time, pump_activating_time, light_signal, light_confidence_level) = predict_system_output(
+    #                 pump_waiting_model,
+    #                 pump_prediction_input,
+    #                 pump_activating_model,
+    #                 pump_prediction_input,
+    #                 light_model,
+    #                 light_prediction_input
+    #             )
+    #             send_predicted_signals(pump_waiting_time, pump_activating_time, light_signal, light_confidence_level)
+    #             print(f"Pump waiting time: {pump_waiting_time}s | Pump activating time: {pump_activating_time}s \nLight: {light_signal} | Confidence Level: {light_confidence_level}%")
+    #             last_data_counter = data_counter
 
 else:
     print("Command not recognized.")
