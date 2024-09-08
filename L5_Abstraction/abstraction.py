@@ -18,9 +18,12 @@ validation_data_file_location       = os.path.join(os.path.dirname(__file__), '.
 testing_data_file_location          = os.path.join(os.path.dirname(__file__), '../L4_Storage/testing_data.txt'    )
 commands_file_location              = os.path.join(os.path.dirname(__file__), '../L4_Storage/commands.txt'        )
 prediction_queue_file_location      = os.path.join(os.path.dirname(__file__), '../L4_Storage/prediction_queue.txt')
-pump_waiting_model_file_location    = "L4_Storage/pump_waiting_model.keras"
-pump_activating_model_file_location = "L4_Storage/pump_ativating_model.keras"
-light_model_file_location           = "L4_Storage/light_model.keras"
+pump_waiting_keras_model_file_location     = "L4_Storage/pump_waiting_model.keras"
+pump_activating_keras_model_file_location  = "L4_Storage/pump_activating_model.keras"
+light_keras_model_file_location            = "L4_Storage/light_model.keras"
+pump_waiting_tflite_model_file_location    = "L4_Storage/pump_waiting_model.tflite"
+pump_activating_tflite_model_file_location = "L4_Storage/pump_activating_model.tflite"
+light_tflite_model_file_location           = "L4_Storage/light_model.tflite"
 
 # CLASSES
 class data_indexes(Enum):
@@ -428,7 +431,13 @@ def train_pump_waiting_model(training_data, validation_data, testing_data):
         number_of_epochs=6
     )
 
-    pump_model.save(pump_waiting_model_file_location)
+    # Saves model
+    pump_model.save(pump_waiting_keras_model_file_location)
+        # Converts into a tflite model and saves it as well
+    converter            = tf.lite.TFLiteConverter.from_keras_model(pump_waiting_model)
+    pump_w_tflite_model  = converter.convert()
+    with open(pump_waiting_tflite_model_file_location, 'wb') as f:
+        f.write(pump_w_tflite_model)
     print("\nModel was saved on L4_Storage as pump_waiting_model.keras")
 
 def train_pump_activating_model(training_data, validation_data, testing_data):
@@ -469,7 +478,15 @@ def train_pump_activating_model(training_data, validation_data, testing_data):
         Y_pump_test,
         number_of_epochs=5
     )
-    pump_activating_model.save(pump_activating_model_file_location)
+
+    # Saves model
+    pump_activating_model.save(pump_activating_keras_model_file_location)
+        # Converts into a tflite model and saves it as well
+    converter            = tf.lite.TFLiteConverter.from_keras_model(pump_activating_model)
+    pump_a_tflite_model  = converter.convert()
+    with open(pump_activating_tflite_model_file_location, 'wb') as f:
+        f.write(pump_a_tflite_model)
+
     print("\nModel was saved on L4_Storage as pump_activating_model.keras")
 
 def train_light_model(training_data, validation_data, testing_data):
@@ -512,7 +529,13 @@ def train_light_model(training_data, validation_data, testing_data):
     evaluate_model_precision_on_activating("light", Y_light_test, predictions)
 
     # Save the model.
-    model.save(light_model_file_location)
+    model.save(light_keras_model_file_location)
+        # Converts into a tflite model and saves it as well
+    converter           = tf.lite.TFLiteConverter.from_keras_model(light_model)
+    light_tflite_model  = converter.convert()
+    with open(light_tflite_model_file_location, 'wb') as f:
+        f.write(light_tflite_model)
+
     print("\nModel was saved on L4_Storage as light_model.keras")
 
 def read_line_from_commands_file(line):
@@ -643,13 +666,13 @@ elif (running_mode == 1):
     print("You chose to run the Machine Learning models")
     
     # Loads pump model from .keras file
-    pump_waiting_model      = tf.keras.models.load_model(pump_waiting_model_file_location)
-    pump_activating_model   = tf.keras.models.load_model(pump_activating_model_file_location)
+    pump_waiting_model      = tf.keras.models.load_model(pump_waiting_keras_model_file_location)
+    pump_activating_model   = tf.keras.models.load_model(pump_activating_keras_model_file_location)
     print("Pump model summary:\n", pump_waiting_model.summary(), pump_activating_model.summary())
 
     # Loads light model from .keras file
     light_model = tf.keras.Sequential([
-        tf.keras.models.load_model(light_model_file_location),
+        tf.keras.models.load_model(light_keras_model_file_location),
         tf.keras.layers.Softmax()
     ])
     print("Light model summary:\n", light_model.summary())
