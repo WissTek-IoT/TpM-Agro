@@ -125,7 +125,7 @@ def read_data_file(file_location, is_prediction_queue=False):
                 humidity        < humidity_outlier      and
                 visible_light   < visible_light_outlier and
                 ir_light        < ir_light_outlier      and
-                uv_index        < uv_index_outlier      
+                uv_index        < uv_index_outlier
             ):
                 data.append([
                     date,
@@ -149,7 +149,7 @@ def read_data_file(file_location, is_prediction_queue=False):
         data_counter = data[0]
         data = np.array(data[1:])
         return data, data_counter
-    
+
     data = np.array(data)
     return data
 
@@ -157,18 +157,18 @@ def generate_abstraction_data(application_data, is_prediction_queue=False):
     abstraction_data = []
 
     # Application Data
-    date            = application_data[:, date_index            ] 
-    hour            = application_data[:, hour_index            ] 
-    temperature     = application_data[:, temperature_index     ].astype(float) 
-    humidity        = application_data[:, humidity_index        ].astype(float) 
-    visible_light   = application_data[:, visible_light_index   ].astype(int) 
-    ir_light        = application_data[:, ir_light_index        ].astype(int)  
-    uv_index        = application_data[:, uv_index_index        ].astype(float) 
-    control_mode    = application_data[:, control_mode_index    ].astype(int)  
-    pump_enabled    = application_data[:, pump_enabled_index    ].astype(int)  
-    pump_waiting    = application_data[:, pump_waiting_index    ].astype(int)  
-    pump_activating = application_data[:, pump_activating_index ].astype(int)  
-    light_enabled   = application_data[:, light_enabled_index   ].astype(int)  
+    date            = application_data[:, date_index            ]
+    hour            = application_data[:, hour_index            ]
+    temperature     = application_data[:, temperature_index     ].astype(float)
+    humidity        = application_data[:, humidity_index        ].astype(float)
+    visible_light   = application_data[:, visible_light_index   ].astype(int)
+    ir_light        = application_data[:, ir_light_index        ].astype(int)
+    uv_index        = application_data[:, uv_index_index        ].astype(float)
+    control_mode    = application_data[:, control_mode_index    ].astype(int)
+    pump_enabled    = application_data[:, pump_enabled_index    ].astype(int)
+    pump_waiting    = application_data[:, pump_waiting_index    ].astype(int)
+    pump_activating = application_data[:, pump_activating_index ].astype(int)
+    light_enabled   = application_data[:, light_enabled_index   ].astype(int)
 
     # Abstraction Data
     hour_in_seconds     = []
@@ -209,7 +209,7 @@ def generate_abstraction_data(application_data, is_prediction_queue=False):
             d_visible_light     .append(0)
             d_ir_light          .append(0)
             d_uv_index          .append(0)
-        
+
         abstraction_data.append([
             hour_in_seconds[i],
             temperature[i],
@@ -231,7 +231,7 @@ def generate_abstraction_data(application_data, is_prediction_queue=False):
         ])
     abstraction_data = np.array(abstraction_data).astype(float)
 
-    if (is_prediction_queue): 
+    if (is_prediction_queue):
         return abstraction_data[2]
     return abstraction_data
 
@@ -260,34 +260,43 @@ print(light_o[0])
 
 # plot
 fig, ax = plt.subplots()
-
 # size and color:
-ax.scatter(abstraction_data[:, 6]/86400, (np.round(100*pump_w_pred,0)/60,),alpha=0.2, c="#2adb6b", s=5, label="Modelo")
-ax.scatter(abstraction_data[:, 6]/86400, (100*abstraction_data[:, 14])/60, c="black", s=5, label="Real")
-ax.set(ylim=(0, max((100*pump_w_pred[192257:])/60)+5))
-leg = plt.legend(["Modelo", "Real"], fontsize="10", loc="upper right", markerscale=4)
-for lh in leg.legendHandles: 
+ax.scatter(abstraction_data[:, 6]/3600, (np.round(100*pump_w_pred,0)/60,),alpha=0.2, c="#2adb6b", s=5)
+ax.scatter(abstraction_data[:, 6]/3600, (100*abstraction_data[:, 14])/60, c="black", s=5)
+ax.scatter(abstraction_data[:, 6]/3600, (27*abstraction_data[:, 16]), c="orange", s=5)
+ax.set(ylim=(-0.1, max((100*pump_w_pred)/60)+5))
+ax.set_xlabel("Tempo decorrido desde o início do cultivo (horas)", fontsize=14)
+ax.set_ylabel("Intervalo entre ciclos de acionamento (minutos)", fontsize=14)
+
+leg = plt.legend(["Modelo de Regressão", "Referência", "Luz"], fontsize="10", loc="upper right", markerscale=4)
+for lh in leg.legend_handles:
     lh.set_alpha(1)
-plt.xlabel("Tempo decorrido desde o início do cultivo (dias)", fontsize=14)
-plt.ylabel("Intervalo entre ciclos de acionamento (segundos)", fontsize=14)
+# plt.legend(["Modelo de Regressão", "Referência", "Luz"], fontsize="10", loc="upper right", markerscale=4)
+# ax2 = ax.twinx()
+# t3=ax2.scatter(abstraction_data[:, 6]/86400, (abstraction_data[:, 16]), c="orange", s=5)
+# ax2.set_ylabel("Estado da luz de crescimento", fontsize=14)
+# ax2.set(ylim=(-0.01, 2))
+# ax2.legend(["Estado da luz de crescimento"], fontsize="10", loc="upper left", markerscale=4)
+
+
 plt.show()
 
 fig, ax = plt.subplots()
-ax.scatter(abstraction_data[:, 6]/86400, (np.round(10*pump_a_pred)), alpha=0.2, c="#2adb6b", s=12, label="Modelo")
-ax.scatter(abstraction_data[:, 6]/86400, (10*abstraction_data[:, 15]), c="black", s=12, label="Real")
-ax.set(ylim=(0, max((10*pump_a_pred))+5))
-leg = plt.legend(["Modelo", "Real"], fontsize="10", loc="upper right", markerscale=3)
-for lh in leg.legendHandles: 
+ax.scatter(abstraction_data[:, 6]/3600, (np.round(10*pump_a_pred)), alpha=0.2, c="#2adb6b", s=12, label="Modelo")
+ax.scatter(abstraction_data[:, 6]/3600, (10*abstraction_data[:, 15]), c="black", s=12, label="Real")
+ax.set(ylim=(-0.01, max((10*pump_a_pred))+5))
+leg = plt.legend(["Modelo de Regressão", "Referência"], fontsize="10", loc="upper right", markerscale=3)
+for lh in leg.legendHandles:
     lh.set_alpha(1)
-plt.xlabel("Tempo decorrido desde o início do cultivo (dias)", fontsize=14)
+plt.xlabel("Tempo decorrido desde o início do cultivo (horas)", fontsize=14)
 plt.ylabel("Duração de um acionamento (segundos)", fontsize=14)
 plt.show()
 
 fig, ax = plt.subplots()
-ax.scatter(abstraction_data[:, 6]/86400, light_o, c="#2adb6b", s=12, label="Modelo")
-ax.scatter(abstraction_data[:, 6]/86400, (abstraction_data[:, 16]), c="black", s=12, label="Real")
-ax.set(ylim=(0, 1.5))
-plt.legend(["Modelo", "Real"], fontsize="10", loc="upper right", markerscale=3)
-plt.xlabel("Tempo decorrido desde o início do cultivo (dias)", fontsize=14)
+ax.scatter(abstraction_data[:, 6]/3600, light_o, c="#2adb6b", s=12, label="Modelo")
+ax.scatter(abstraction_data[:, 6]/3600, (abstraction_data[:, 16]), c="black", s=12, label="Real")
+ax.set(ylim=(-0.3, 1.5))
+plt.legend(["Modelo de Classificação", "Referência"], fontsize="10", loc="upper right", markerscale=3)
+plt.xlabel("Tempo decorrido desde o início do cultivo (horas)", fontsize=14)
 plt.ylabel("Duração de um acionamento (segundos)", fontsize=14)
 plt.show()
