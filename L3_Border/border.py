@@ -73,7 +73,7 @@ RECEIVER_ID      = 11
 dl_packet = [0]*PACKET_BYTES
 ul_packet = [0]*PACKET_BYTES
 SERIAL_BAUD_RATE = 9600
-serial_port = "COM9"
+serial_port = "COM5"
 
 # Application Data
 temperature             = 0
@@ -88,12 +88,13 @@ light_enabled           = 0
 # Border Data
 timestamp               = ""
 data_counter            = 0
-first_dataset           = ""
+first_dataset           = "28-08-2024;17:14:35;25.3;92;337;635;0.4;0;0;180;8;1;\n"
 current_dataset         = ""
 previous_dataset        = ""
 
 # Abstraction Data
-confidence_level        = 0
+pump_confidence_level         = 0
+light_confidence_level        = 0
 
 # Files
     # Creates the application data file if it already not exists
@@ -152,7 +153,8 @@ def store_command_variables(commands):
     global automatic_mode_type
     global hour_to_turn_on_light
     global hour_to_turn_off_light
-    global confidence_level
+    global pump_confidence_level
+    global light_confidence_level
 
     # Stores all commands into its variables
     communication_interval      = int   (commands[0])
@@ -163,7 +165,8 @@ def store_command_variables(commands):
     automatic_mode_type         = int   (commands[5])
     hour_to_turn_on_light       = str   (commands[6])
     hour_to_turn_off_light      = str   (commands[7])
-    confidence_level            = float (commands[8])
+    light_confidence_level      = float (commands[8])
+    # pump_confidence_level       = float (commands[8])
 
     # If the system is in automatic periodic mode, controls light based on current hour
     if (control_mode == 1 and automatic_mode_type == 0):
@@ -182,7 +185,8 @@ def read_commands_file():
         data_line = data_line[1].strip()
         commands.append(data_line)
 
-    store_command_variables(commands)
+    if (len(commands) > 0):
+        store_command_variables(commands)
 
     commands_file.close()
 
@@ -289,14 +293,14 @@ def debug_application_data(debug):
     global light_enabled       
 
     if debug:     
-        if (control_mode == 0 and automatic_mode_type == 1):
+        if (control_mode == 1 and automatic_mode_type == 1):
             print("======RUNNING MACHINE LEARNING MODEL======")
             print(("Temperature: {} °C\n" +
             "Humidity: {}%\n" +
             "Visible: {} lm | IR: {} lm | UV Index: {}\n" +
             "Control Mode: {}\n" +
-            "Predicted Pump State: {} | Predicted Light State: {}\n" +
-            "Confidence Level: {}%\n").format(
+            "Predicted Pump State:  {} | Confidence Level: {}%\n" +
+            "Predicted Light State: {} | Confidence Level: {}%\n").format(
                 temperature,
                 humidity,
                 visible_light_intensity,
@@ -304,8 +308,9 @@ def debug_application_data(debug):
                 uv_index,
                 control_mode,
                 pump_enabled,
+                pump_confidence_level,
                 light_enabled,
-                confidence_level
+                light_confidence_level
             ))  
         else:
             print(("Temperature: {} °C\n" +
@@ -357,6 +362,8 @@ def store_application_data():
     global first_dataset
     global current_dataset
     global previous_dataset
+    global pump_activation_interval
+    global pump_activation_duration
 
     application_data_file = open(application_data_file_location, 'a')
     if (application_data_file.writable()):
@@ -371,6 +378,8 @@ def store_application_data():
             uv_index,
             control_mode,
             pump_enabled,
+            pump_activation_interval,
+            pump_activation_duration,
             light_enabled,
             "\n"
         ]
@@ -383,8 +392,8 @@ def store_application_data():
         application_data_file.write(res)
 
         # Saves dataset
-        if (data_counter == 0):
-            first_dataset = res
+        # if (data_counter == 0):
+        #     first_dataset = res
         previous_dataset    = current_dataset
         current_dataset     = res
         

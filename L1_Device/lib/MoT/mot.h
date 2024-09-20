@@ -15,6 +15,9 @@
     #define AUTOMATIC_PERIODIC_MODE 0
     #define AUTOMATIC_ML_MODE       1
 
+    #define MAX_TEMPERATURE         28.0
+    #define MAX_HUMIDITY            92.0
+
 // GLOBAL VARIABLES
 extern byte dl_packet[PACKET_BYTES];
 extern byte ul_packet[PACKET_BYTES];

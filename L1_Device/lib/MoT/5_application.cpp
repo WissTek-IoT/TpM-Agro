@@ -100,11 +100,12 @@ void run_periodic_automatic_control() {
 
 // Receives ML signal from packet and applies it to given devices.
 void run_ml_automatic_control() {
-    control_pump_by_signal(pump_signal);
-    control_light_by_signal(light_signal);
+    run_periodic_automatic_control();
+    // control_pump_by_signal(pump_signal);
+    // control_light_by_signal(light_signal);
 
-    light_enabled = light_signal;
-    pump_enabled = pump_signal;
+    // light_enabled = light_signal;
+    // pump_enabled = pump_signal;
 }
 
 // Runs either Periodic or Machine Learning Automatic Control
@@ -141,8 +142,8 @@ void run_application() {
     current_uv_index                = read_UV_index();
 
     // constrain all variables so they don't cause packet errors
-    current_temperature             = constrain(current_temperature,                0, UINT16_MAX);
-    current_humidity                = constrain(current_humidity,                   0, UINT16_MAX);
+    current_temperature             = constrain(current_temperature,                0, MAX_TEMPERATURE);
+    current_humidity                = constrain(current_humidity,                   0, MAX_HUMIDITY);
     current_visible_light_intensity = constrain(current_visible_light_intensity,    0, UINT16_MAX);
     current_ir_light_intensity      = constrain(current_ir_light_intensity,         0, UINT16_MAX);
     current_uv_index                = constrain(current_uv_index,                   0, 20);
