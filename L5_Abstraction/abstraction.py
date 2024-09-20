@@ -1,9 +1,7 @@
-# TO DO:
-    # Insert a variable to define if this file will be running on windows/conventional PC or Rpi
-        # Change COM Port number
-        # Change tensorflow import
-        # Change tensorflow caller
-    # Show graphs comparing entire abstraction output vs model predicted output
+# DEFINE MACHINE TO RUN
+rpi = 0
+pc  = 1
+machine_to_run = pc
 
 # IMPORTS
 import os
@@ -12,11 +10,16 @@ os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
 
 import random
-import tensorflow           as tf
 import numpy                as np
 import matplotlib.pyplot    as plt
 from enum       import Enum
 from datetime   import datetime
+
+# Depending on which machine the code is running, import a different instance of tensorflow
+if (machine_to_run == pc):
+    import tensorflow       as tf
+elif (machine_to_run == rpi):
+    import tensorflow_runtime.interpreter as tflite
 
 # FILES
 application_data_file_location      = os.path.join(os.path.dirname(__file__), '../L4_Storage/application_data.txt')
@@ -101,9 +104,12 @@ def store_data_into_file(data, file_location):
 def set_seed(seed):
     # Set fixed seeds for model consistency
     os.environ['PYTHONHASHSEED']=str(seed)
-    tf.random.set_seed(seed)
     np.random.seed(seed)
     random.seed(seed)
+    if (machine_to_run == pc):
+        tf.random.set_seed(seed)
+    elif (machine_to_run == rpi):
+        tflite.random.set_seed(seed)
 
 def read_application_data_from_file(file_location, is_prediction_queue=False):
     data        = []
@@ -638,32 +644,68 @@ def read_line_from_commands_file(line):
     
     return 0
 
-def predict_system_output(pump_waiting_model, 
+def predict_system_output(machine,
+                          pump_waiting_model, 
                           input_for_pump_waiting_prediction, 
                           pump_activating_model,
                           input_for_pump_activating_prediction,
                           light_model,
                           input_for_light_prediction
                           ):
-    pump_waiting_input              = np.expand_dims(input_for_pump_waiting_prediction, 0)
-    pump_activating_input           = np.expand_dims(input_for_pump_activating_prediction, 0)
-    light_input                     = np.expand_dims(input_for_light_prediction, 0)
+    
+    # Extracts system output based on machine
+    if (machine == pc):
+        pump_waiting_input              = np.expand_dims(input_for_pump_waiting_prediction, 0)
+        pump_activating_input           = np.expand_dims(input_for_pump_activating_prediction, 0)
+        light_input                     = np.expand_dims(input_for_light_prediction, 0)
 
-    pump_waiting_prediction         = pump_waiting_model.predict(pump_waiting_input)
-    pump_activating_prediction      = pump_activating_model.predict(pump_activating_input)
-    light_prediction                = light_model.predict(light_input)
+        pump_waiting_prediction         = pump_waiting_model.predict(pump_waiting_input)
+        pump_activating_prediction      = pump_activating_model.predict(pump_activating_input)
+        light_prediction                = light_model.predict(light_input)
 
-    pump_waiting_output_signal      = round(pump_waiting_attenuation*pump_waiting_prediction[0][0])
-    pump_activating_output_signal   = round(pump_activating_attenuation*pump_activating_prediction[0][0])
-    light_output_signal             = np.argmax(light_prediction)
+        pump_waiting_output_signal      = round(pump_waiting_attenuation*pump_waiting_prediction[0][0])
+        pump_activating_output_signal   = round(pump_activating_attenuation*pump_activating_prediction[0][0])
+        light_output_signal             = np.argmax(light_prediction)
 
-    # Extracts the predicted value from the predicted label
-    light_confidence_level          = round(light_prediction[0][light_output_signal]*100, 2)
+        # Extracts the predicted value from the predicted label
+        light_confidence_level          = round(light_prediction[0][light_output_signal]*100, 2)
+
+        return (pump_waiting_output_signal, 
+                pump_activating_output_signal,
+                light_output_signal, 
+                light_confidence_level)
+    
+
+    # Get input details
+    pump_waiting_input_details      = pump_waiting_model    .get_input_details()
+    pump_activating_input_details   = pump_activating_model .get_input_details()
+    light_input_details             = light_model           .get_input_details()
+
+    # Get output details
+    pump_waiting_output_details     = pump_waiting_model    .get_output_details()
+    pump_activating_output_details  = pump_activating_model .get_output_details()
+    light_output_details            = light_model           .get_output_details()
+
+    # Prepare tensors to perform inference
+    pump_waiting_model.set_tensor(pump_waiting_input_details[0]['index'], pump_prediction_input)
+    pump_waiting_model.invoke()
+    pump_activating_model.set_tensor(pump_activating_input_details[0]['index'], pump_prediction_input)
+    pump_activating_model.invoke()
+    light_model.set_tensor(pump_waiting_input_details[0]['index'], light_prediction_input)
+    light_model.invoke()
+
+    # Extract inferences from tensors
+    pump_waiting_output_signal      = pump_waiting_model.get_tensor(pump_activating_output_details[0]['index'])
+    pump_activating_output_signal   = pump_activating_model.get_tensor(pump_activating_output_details[0]['index'])
+    light_output                    = light_model.get_tensor(light_output_details[0]['index'])
+    light_output_signal             = np.argmax(light_output)
+    light_confidence_level          = light_output[light_signal]
 
     return (pump_waiting_output_signal, 
-            pump_activating_output_signal,
-            light_output_signal, 
-            light_confidence_level)
+        pump_activating_output_signal,
+        light_output_signal, 
+        light_confidence_level)
+
 
 def send_predicted_signals(pump_waiting_time, 
                            pump_activating_time, 
@@ -689,7 +731,11 @@ def send_predicted_signals(pump_waiting_time,
     commands_file.close()
 
 # MAIN
-running_mode = int(input("Select between: Train ML Model (0) or Run ML Model (1)\n"))
+if (machine_to_run == pc):
+    running_mode = int(input("Select between: Train ML Model (0) or Run ML Model (1)\n"))
+elif (machine_to_run == rpi):
+    running_mode = 1
+
 if (running_mode == 0):
     print("\nYou chose to train the Machine Learning Model.")
 
@@ -779,7 +825,8 @@ elif (running_mode == 1):
                     light_prediction_input
                 )
                 send_predicted_signals(pump_waiting_time, pump_activating_time, light_signal, light_confidence_level)
-                print(f"Pump waiting time: {pump_waiting_time}s | Pump activating time: {pump_activating_time}s \nLight: {light_signal} | Confidence Level: {light_confidence_level}%")
+                print(f"Pump waiting time: {pump_waiting_time}s | Pump activating time: {pump_activating_time}s \n" + 
+                        "Light: {light_signal} | Confidence Level: {light_confidence_level}%")
                 last_data_counter = data_counter
 else:
     print("Command not recognized.")
