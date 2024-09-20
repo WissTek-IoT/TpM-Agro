@@ -1,3 +1,10 @@
+# TO DO:
+    # Insert a variable to define if this file will be running on windows/conventional PC or Rpi
+        # Change COM Port number
+        # Change tensorflow import
+        # Change tensorflow caller
+    # Show graphs comparing entire abstraction output vs model predicted output
+
 # IMPORTS
 import os
 # Edit tensorflow flags before importing it
@@ -5,8 +12,9 @@ os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
 
 import random
-import tensorflow   as tf
-import numpy        as np
+import tensorflow           as tf
+import numpy                as np
+import matplotlib.pyplot    as plt
 from enum       import Enum
 from datetime   import datetime
 
@@ -392,6 +400,31 @@ def evaluate_model_precision_on_activating(output_type, validation_output, predi
     print(f"Time difference: {round((times_active_in_prediction_set - times_active_in_validation_set)/60, 2)} minutes.")
     print(f"Matching {output_type} activations: {matching_activations}")
 
+def show_model_performance_graph(
+    x_axis,
+    y_abstraction,
+    y_model,
+    x_title,
+    y_title,
+    y_lim,
+    legend,
+    y_aux=0,
+):
+    """Shows a graph comparing abstraction data and the equivalent model response."""
+    fig, ax = plt.subplots()
+    # size and color:
+    ax.scatter(x_axis, y_model,       c="#2adb6b", s=5, alpha=0.2)
+    ax.scatter(x_axis, y_abstraction, c="black",   s=5)
+    if (y_aux > 0): ax.scatter(x_axis, y_aux,         c="orange",  s=5)
+    ax.set(ylim=(-0.1, y_lim))
+    ax.set_xlabel(x_title, fontsize=14)
+    ax.set_ylabel(y_title, fontsize=14)
+
+    leg = plt.legend(legend, fontsize="10", loc="upper right", markerscale=4)
+    for lh in leg.legend_handles:
+        lh.set_alpha(1)
+    plt.show()
+
 def train_pump_waiting_model(training_data, validation_data, testing_data):
     print("Training pump model.")
     # Reads model variables
@@ -439,6 +472,21 @@ def train_pump_waiting_model(training_data, validation_data, testing_data):
     with open(pump_waiting_tflite_model_file_location, 'wb') as f:
         f.write(pump_w_tflite_model)
     print("\nModel was saved on L4_Storage as pump_waiting_model.keras")
+
+    # Plots performance graph
+    print("\nShowing model performance graph.")
+    abstraction_data = read_abstraction_data_from_file(abstraction_data_file_location)
+    pump_w_pred = pump_model.predict(abstraction_data[:, 0:13])
+    show_model_performance_graph(
+        abstraction_data[:, 6]/3600,
+        (100*abstraction_data[:, 14])/60,
+        (np.round(100*pump_w_pred,0)/60,),
+        "Tempo decorrido desde o início do cultivo (horas)",
+        "Intervalo entre ciclos de acionamento (minutos)",
+        max((100*pump_w_pred)/60)+5,
+        ["Modelo de Regressão", "Referência", "Luz"],
+        (27*abstraction_data[:, 16])
+    )
 
 def train_pump_activating_model(training_data, validation_data, testing_data):
     print("Training pump model.")
@@ -489,6 +537,21 @@ def train_pump_activating_model(training_data, validation_data, testing_data):
 
     print("\nModel was saved on L4_Storage as pump_activating_model.keras")
 
+
+    # Plots performance graph
+    print("\nShowing model performance graph.")
+    abstraction_data = read_abstraction_data_from_file(abstraction_data_file_location)
+    pump_a_pred = pump_activating_model.predict(abstraction_data[:, 0:13])
+    show_model_performance_graph(
+        abstraction_data[:, 6]/3600,
+        (10*abstraction_data[:, 15]),
+        (np.round(10*pump_a_pred)),
+        "Tempo decorrido desde o início do cultivo (horas)",
+        "Duração de um acionamento (segundos)",
+        max((10*pump_a_pred))+5,
+        ["Modelo de Regressão", "Referência"]
+    )
+
 def train_light_model(training_data, validation_data, testing_data):
     print("Training light model.")
     # Reads data
@@ -535,8 +598,25 @@ def train_light_model(training_data, validation_data, testing_data):
     light_tflite_model  = converter.convert()
     with open(light_tflite_model_file_location, 'wb') as f:
         f.write(light_tflite_model)
-
     print("\nModel was saved on L4_Storage as light_model.keras")
+
+    # Plots performance graph
+    print("\nShowing model performance graph.")
+    abstraction_data = read_abstraction_data_from_file(abstraction_data_file_location)
+    light_pred       = light_model.predict(abstraction_data[:, [0, 6]])
+    light_o          = []
+    for i in range(len(light_pred)):
+        output = np.argmax(light_pred[i])
+        light_o.append(output)
+    show_model_performance_graph(
+        abstraction_data[:, 6]/3600,
+        (abstraction_data[:, 16]),
+        light_o,
+        "Tempo decorrido desde o início do cultivo (horas)",
+        "Duração de um acionamento (segundos)",
+        1.5,
+        ["Modelo de Regressão", "Referência"]
+    )
 
 def read_line_from_commands_file(line):
     """Reads commands file and extracts given line.\n
@@ -701,6 +781,5 @@ elif (running_mode == 1):
                 send_predicted_signals(pump_waiting_time, pump_activating_time, light_signal, light_confidence_level)
                 print(f"Pump waiting time: {pump_waiting_time}s | Pump activating time: {pump_activating_time}s \nLight: {light_signal} | Confidence Level: {light_confidence_level}%")
                 last_data_counter = data_counter
-
 else:
     print("Command not recognized.")
