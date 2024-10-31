@@ -4,7 +4,7 @@
 
 <!-- [![GitHub last commit](https://img.shields.io/github/last-commit/WissTek-IoT/TpM-Agro)](#) -->
 
-![Aeroponics Greenhouse](https://drive.google.com/thumbnail?id=1BcZDbsrD4igT2k8ysZTfdPOcN1ZeqeU2&sz=w1000)
+![Aeroponics Greenhouse](https://drive.google.com/thumbnail?id=1HjXpzMfKKBVPNj-gAgVSCOa9W5KbOCqC&sz=w1000)
 
 ## 🗒️Table of Contents
 - [About](#-about)
@@ -54,46 +54,46 @@ For five days, the system was controlled by an aeroponics specialist, with data 
 Folder names were given based on the [Three-Phase Methodology for IoT Project Development](https://www.sciencedirect.com/science/article/abs/pii/S2542660522001056#:~:text=It%20is%20a%20generic%2C%20agile,Business%2C%20Requirements%2C%20and%20Implementation.).
 ```
 .
-├── L1_Device                  # Process Device
+├── L1_Device                           # Process Device
 │   ├── ...
 │   ├── include                
-│   │   ├── pinout.h           # Pinout definitions for the process device
-│   │   ├── utils.h            # Common-used libraries
+│   │   ├── pinout.h                    # Pinout definitions for the process device
+│   │   ├── utils.h                     # Common-used libraries
 │   │   └── ...
-│   ├── lib                    # Internal libraries organized by functionality
-│   │   ├── light              # Grow light activation control
-│   │   ├── mode               # Manual/Automatic mode management
-│   │   ├── MoT                # Communication protocol library
-│   │   ├── pump               # Pump control
-│   │   ├── WTK_TH             # Integrated temperature and humidity sensor
+│   ├── lib                             # Internal libraries organized by functionality
+│   │   ├── light                       # Grow light activation control
+│   │   ├── mode                        # Manual/Automatic mode management
+│   │   ├── MoT                         # Communication protocol library
+│   │   ├── pump                        # Pump control
+│   │   ├── WTK_TH                      # Integrated temperature and humidity sensor
 │   │   └── ...
-│   ├── src                    # Main source code for the device
+│   ├── src                             # Main source code for the device
 │   └── ...
 
-├── L3_Border                  # Interface between the process and abstraction device
-│   └── border.py              # Reads and stores process data
+├── L3_Border                           # Interface between the process and abstraction device
+│   └── border.py                       # Reads and stores process data
 
-├── L4_Storage                 # Stores system data
+├── L4_Storage                          # Stores system data
 │   ├── abstraction_data.txt   
 │   ├── application_data.txt   
-│   ├── bkp_app_data.txt       # Backup of application data
-│   ├── commands.txt           # Commands terminal
-│   ├── light_model.keras      # DNN model for light control
-│   ├── light_model.tflite     # Same as above, in tflite format
-│   ├── pump_activating_model.keras  # DNN model to predict the duration of a nutrition cycle
-│   ├── pump_activating_model.tflite # Same as above, in tflite format
-│   ├── pump_waiting_model.keras     # DNN model to predict the interval between nutrition cycles
-│   ├── pump_waiting_model.tflite    # Same as above, in tflite format
-│   ├── prediction_queue.txt    # New system data to generate control output
-│   ├── testing_data.txt        # Data for testing the models
-│   ├── training_data.txt       # Data for training the models
-│   └── validation_data.txt     # Data for model validation
+│   ├── bkp_app_data.txt                # Backup of application data
+│   ├── commands.txt                    # Commands terminal
+│   ├── light_model.keras               # DNN model for light control
+│   ├── light_model.tflite              # Same as above, in tflite format
+│   ├── pump_activating_model.keras     # DNN model to predict the duration of a nutrition cycle
+│   ├── pump_activating_model.tflite    # Same as above, in tflite format
+│   ├── pump_waiting_model.keras        # DNN model to predict the interval between nutrition cycles
+│   ├── pump_waiting_model.tflite       # Same as above, in tflite format
+│   ├── prediction_queue.txt            # New system data to generate control output
+│   ├── testing_data.txt                # Data for testing the models
+│   ├── training_data.txt               # Data for training the models
+│   └── validation_data.txt             # Data for model validation
 
-├── L5_Abstraction             # Data abstraction and processing logic
-│   └── abstraction.py         # Compute abstraction data, train and run all three models
+├── L5_Abstraction                      # Data abstraction and processing logic
+│   └── abstraction.py                  # Compute abstraction data, train and run all three models
 
-└── L6_Exibition               # Data display 
-    └── exibition.py           # Not implemented
+└── L6_Exibition                        # Data display 
+    └── exibition.py                    # Not implemented
 ```
 
 ### ✨ Results
@@ -138,9 +138,6 @@ Overall, this project was a fantastic experience, and I’m grateful for the lea
 ![Sensors](https://drive.google.com/thumbnail?id=1AnsLlIjtvzdLWZmtSIB3BNHeaYXN1LXj&sz=w1000)
 *Light Sensor (right) and temperature and humidity sensor (left)*
 
-![Box](https://drive.google.com/thumbnail?id=1jevshx4NXFtZonPOK-lBejVnMqjJXamG&sz=w1000)
-*Nutrient pump*
-
 ## ⚖️ License
 This project is licensed under the Apache License 2.0. You are free to use, modify, and distribute this code, provided that proper attribution is given, and the license terms are included in any distributions.
 
@@ -150,8 +147,8 @@ Since TpM-Agro was developed as a 1-year research project, I do not plan to make
 ## 💬 Contact
 [
     <img
-        src="https://images.weserv.nl/?url=https://github.com/vdrad.png&fit=cover&mask=circle&maxage=7d" 
-        width=10%
+        src="https://images.weserv.nl/?url=https://avatars.githubusercontent.com/u/145018309?v=4&fit=cover&mask=circle&maxage=7d" 
+        width=15%
         title="GitHub Profile"
         alt="vdrad"
     />
